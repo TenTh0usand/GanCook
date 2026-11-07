@@ -28,6 +28,8 @@ const TABS = [
 export function BottomNav() {
   const pathname = usePathname()
   const t = useT()
+  // GanCook-10k：全屏点菜页用「已点 N 道」栏代替底部导航
+  if (/^\/meals\/[^/]+\/order/.test(pathname)) return null
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-[calc(env(safe-area-inset-bottom)+12px)]">
       <div className="mf-trough pointer-events-auto flex items-center gap-1 p-1.5 shadow-[0_4px_18px_rgba(56,71,60,0.16)]">

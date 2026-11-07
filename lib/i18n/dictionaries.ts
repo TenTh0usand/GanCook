@@ -294,6 +294,7 @@ const zh: Messages = {
   'menu.full': '完整菜单',
   'menu.seasonal': '本季推荐',
   'menu.top': '常做 TOP',
+  'menu.topShort': '常做',
   'menu.homeRule': '家常菜单：标了「家常精选」的菜 + 最近 3 个月做过 {n} 次以上的菜',
   'menu.fullRule': '完整菜单：全部菜，按大类 / 细类分组',
   'menu.fallbackHint': '家常菜单还是空的，先显示全部菜。编辑菜品打开「家常精选」，或多做几次，常做的菜会自动收进来。',
@@ -315,6 +316,18 @@ const zh: Messages = {
   'dishform.moreLogs': '还有 {n} 条更早的记录',
   'dishform.readOnlyHint': '这道菜由别人添加，只有添加者或管理员能修改',
   'err.onlyOwnLog': '只能删除自己的记录',
+  'menu.searchPh': '搜菜名 / 标签 / 分类',
+  'menu.searchResult': '找到 {n} 道菜',
+  'menu.searchNone': '没有找到，换个词试试',
+  'menu.empty': '这个菜单还没有菜',
+  'order.title': '{meal} · 点菜',
+  'order.back': '返回饭局',
+  'order.pickedN': '已点 {n} 道',
+  'order.pickedNone': '还没点菜',
+  'order.done': '选好了',
+  'order.go': '去点菜',
+  'order.edit': '改一改',
+  'order.cta': '按分类挑，常做的排在前面',
 }
 
 const en: Messages = {
@@ -590,6 +603,7 @@ const en: Messages = {
   'menu.full': 'Full menu',
   'menu.seasonal': 'In season',
   'menu.top': 'Most cooked',
+  'menu.topShort': 'Top',
   'menu.homeRule': 'Everyday menu: dishes marked "Everyday pick" + dishes cooked {n}+ times in the last 3 months',
   'menu.fullRule': 'Full menu: every dish, grouped by category / sub-category',
   'menu.fallbackHint': 'The everyday menu is empty, so all dishes are shown. Turn on "Everyday pick" when editing a dish, or cook it a few times and it will show up here.',
@@ -611,6 +625,18 @@ const en: Messages = {
   'dishform.moreLogs': '{n} older entries',
   'dishform.readOnlyHint': 'Added by someone else — only they or an admin can edit it',
   'err.onlyOwnLog': 'You can only delete your own entries',
+  'menu.searchPh': 'Search dishes / tags / categories',
+  'menu.searchResult': '{n} dishes found',
+  'menu.searchNone': 'Nothing found — try another word',
+  'menu.empty': 'No dishes in this menu yet',
+  'order.title': '{meal} · Order',
+  'order.back': 'Back to meal',
+  'order.pickedN': '{n} picked',
+  'order.pickedNone': 'Nothing picked yet',
+  'order.done': 'Done',
+  'order.go': 'Order',
+  'order.edit': 'Edit',
+  'order.cta': 'Browse by category — most cooked first',
 }
 
 export const dictionaries: Record<Locale, Messages> = { zh, en }

@@ -20,6 +20,11 @@ import {
   SEASONAL_DAYS,
   SEASONAL_LIMIT,
   TOP_LIMIT,
+  type BrowserDish,
+  type BrowserMenu,
+  type BrowserPoster,
+  type BrowserSection,
+  type MenuBrowserData,
   type MenuId,
 } from '@/lib/menu-config'
 
@@ -219,4 +224,79 @@ export function getCookLogsFor(dishIds: string[]) {
     map.get(r.dishId)!.push({ id: r.id, date: r.date, userId: r.userId })
   }
   return map
+}
+
+
+/* ───────── 菜单浏览组件的数据（P2 第 2 步） ───────── */
+
+type TFn = (key: string, vars?: Record<string, string | number>) => string
+
+/**
+ * 组装菜单浏览组件需要的全部数据：所有菜单的分组（只存菜 id）、菜品字典、时令海报。
+ * 「本季推荐」由顶部海报展示，列表里不再重复出现。
+ */
+export function getMenuBrowserData(t: TFn, opts: { includeArchived?: boolean } = {}): MenuBrowserData {
+  const categories = listCategories()
+  const all = getMenuDishes()
+  const catName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? null
+  const dishMap: Record<string, BrowserDish> = {}
+  const put = (d: Dish, cook: CookStat, isNew: boolean) => {
+    dishMap[d.id] = {
+      ...d,
+      cookTotal: cook.total,
+      cookLast: cook.last,
+      isNew,
+      categoryName: catName(d.subcategory) ?? catName(d.category),
+    }
+  }
+  for (const d of all) put(d, d.cook, d.isNew)
+
+  const menus: BrowserMenu[] = MENUS.map((m) => {
+    const built = buildMenu(m.id, all, categories)
+    const sections: BrowserSection[] = built.sections
+      .filter((s) => s.id !== '__seasonal')
+      .map((s) => ({
+        id: s.id,
+        name: s.id === '__top' ? t('menu.top') : s.name,
+        navName: s.id === '__top' ? t('menu.topShort') : undefined,
+        badge: s.badge ?? (s.dishes.some((d) => d.isNew) ? t('dish.new') : null),
+        dishIds: s.dishes.map((d) => d.id),
+        groups: s.groups?.map((g) => ({ id: g.id, name: g.name, dishIds: g.dishes.map((d) => d.id) })),
+      }))
+    return {
+      id: m.id,
+      label: t(m.labelKey),
+      rule: m.include === 'home' ? t('menu.homeRule', { n: HOME_MIN_COOKS }) : t('menu.fullRule'),
+      fallbackAll: built.fallbackAll,
+      sections,
+    }
+  })
+
+  // 已下架的菜：只在「完整菜单」末尾出现（管理用）
+  if (opts.includeArchived) {
+    const stats = getCookStats()
+    const empty: CookStat = { total: 0, recent: 0, last: null }
+    const archived = db.select().from(dishes).where(eq(dishes.status, 'archived')).all()
+    for (const d of archived) put(d, stats.get(d.id) ?? empty, false)
+    const full = menus.find((m) => m.id === 'full')
+    if (full && archived.length > 0)
+      full.sections.push({
+        id: '__archived',
+        name: t('dishes.archived'),
+        badge: null,
+        dishIds: archived.map((d) => d.id),
+      })
+  }
+
+  // 时令海报：管理员指定的带标题 / 海报图；自动的用「本季推荐」+ 菜品照片
+  const seasonal = getSeasonal(all)
+  const features = new Map(
+    db.select().from(menuFeatures).all().map((f) => [f.dishId, f]),
+  )
+  const posters: BrowserPoster[] = seasonal.dishes.map((d) => {
+    const f = seasonal.auto ? undefined : features.get(d.id)
+    return { dishId: d.id, title: f?.title || t('menu.seasonal'), posterPath: f?.posterPath ?? null }
+  })
+
+  return { menus, dishes: dishMap, posters, postersAuto: seasonal.auto }
 }

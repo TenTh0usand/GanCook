@@ -1,11 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronLeft, Clock, Timer, ChefHat, Soup } from 'lucide-react'
+import { ChevronLeft, Clock, Timer, ChefHat, Soup, UtensilsCrossed } from 'lucide-react'
 import { requireUser } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
 import { getMealDetail, myOrderedDishIds } from '@/lib/meals'
 import { getSlotRoles } from '@/lib/duties'
-import { getMenuDishes } from '@/lib/menus'
 import { MEAL_EMOJI, fmtTime, fmtDateLabel, deadlineText, nowSec } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
 import { Avatar } from '@/components/ui/avatar'
@@ -14,7 +13,6 @@ import { List, Row } from '@/components/ui/list'
 import { STATUS_META } from '@/components/meals/meal-card'
 import { MealControls } from '@/components/meals/meal-controls'
 import { MealRolesCard } from '@/components/meals/meal-roles-card'
-import { OrderPicker } from '@/components/meals/order-picker'
 import { ReviewSection } from '@/components/meals/review-section'
 
 export const dynamic = 'force-dynamic'
@@ -32,8 +30,6 @@ export default async function MealDetailPage({
   const tz = getSettings().timezone
   const t = await getT()
 
-  // GanCook-10k（P2）：常做的菜排前面
-  const activeDishes = getMenuDishes()
   const myIds = [...myOrderedDishIds(id, me.id)]
 
   // GanCook-10k：分工按「日期 + 时段」读取；一个餐次可以多人做菜
@@ -148,18 +144,34 @@ export default async function MealDetailPage({
         />
       </div>
 
-      {/* 点菜 */}
+      {/* 点菜：GanCook-10k（P2）改为进入全屏点菜页 */}
       {orderingOpen && (
         <section className="mb-6">
-          <h2 className="mb-3 text-base font-semibold text-ink">
-            {t('detail.pick')}
-            {myIds.length > 0 && t('detail.picked', { n: myIds.length })}
-          </h2>
-          <OrderPicker
-            mealId={meal.id}
-            dishes={activeDishes}
-            initialSelected={myIds}
-          />
+          <Link
+            href={`/meals/${meal.id}/order`}
+            className="mf-tonal mf-pressable flex items-center gap-3 p-4"
+          >
+            <span className="mf-chip relative bg-surface">
+              <UtensilsCrossed className="h-[18px] w-[18px]" />
+            </span>
+            <span className="relative min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold text-ink">
+                {t('detail.pick')}
+                {myIds.length > 0 && t('detail.picked', { n: myIds.length })}
+              </span>
+              <span className="mt-0.5 block truncate text-xs text-secondary">
+                {myIds.length > 0
+                  ? orders
+                      .filter((o) => o.userId === me.id)
+                      .map((o) => o.dishName)
+                      .join(t('common.listSep'))
+                  : t('order.cta')}
+              </span>
+            </span>
+            <span className="relative mf-accent-fill shrink-0 rounded-full px-4 py-2 text-sm font-bold">
+              {myIds.length > 0 ? t('order.edit') : t('order.go')}
+            </span>
+          </Link>
         </section>
       )}
 
