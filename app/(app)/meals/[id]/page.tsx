@@ -1,13 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ChevronLeft, Clock, Timer, ChefHat, Soup } from 'lucide-react'
-import { eq } from 'drizzle-orm'
-import { db } from '@/lib/db/client'
-import { dishes as dishesTable } from '@/lib/db/schema'
 import { requireUser } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
 import { getMealDetail, myOrderedDishIds } from '@/lib/meals'
 import { getSlotRoles } from '@/lib/duties'
+import { getMenuDishes } from '@/lib/menus'
 import { MEAL_EMOJI, fmtTime, fmtDateLabel, deadlineText, nowSec } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
 import { Avatar } from '@/components/ui/avatar'
@@ -34,11 +32,8 @@ export default async function MealDetailPage({
   const tz = getSettings().timezone
   const t = await getT()
 
-  const activeDishes = db
-    .select()
-    .from(dishesTable)
-    .where(eq(dishesTable.status, 'active'))
-    .all()
+  // GanCook-10k（P2）：常做的菜排前面
+  const activeDishes = getMenuDishes()
   const myIds = [...myOrderedDishIds(id, me.id)]
 
   // GanCook-10k：分工按「日期 + 时段」读取；一个餐次可以多人做菜

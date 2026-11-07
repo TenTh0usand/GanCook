@@ -53,6 +53,10 @@ export const dishes = sqliteTable(
     status: text('status', { enum: ['active', 'archived'] })
       .notNull()
       .default('active'),
+    // GanCook-10k（P2 菜单）：大类 / 细类（指向 dish_categories.id，可空 = 其他）、家常精选
+    category: text('category'),
+    subcategory: text('subcategory'),
+    pinned: integer('pinned', { mode: 'boolean' }).notNull().default(false),
     createdBy: text('created_by').references(() => users.id, {
       onDelete: 'set null',
     }),
@@ -210,6 +214,54 @@ export const mealRoles = sqliteTable(
   ],
 )
 
+// ── 菜品分类（GanCook-10k · P2）：parentId 为空 = 大类，否则为该大类下的细类 ──
+// 预置默认分类见迁移文件；管理员以后可改名、排序、加角标
+export const dishCategories = sqliteTable('dish_categories', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  parentId: text('parent_id'),
+  // 左侧导航上方的小角标，如「新」「秋冬上新」
+  badge: text('badge'),
+  sort: integer('sort').notNull().default(0),
+  createdAt: integer('created_at').notNull().default(now),
+})
+
+// ── 手动「我做过」记录（没开饭局时补记做过次数） ──
+export const dishCookLogs = sqliteTable(
+  'dish_cook_logs',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    dishId: text('dish_id')
+      .notNull()
+      .references(() => dishes.id, { onDelete: 'cascade' }),
+    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+    date: text('date').notNull(),
+    createdAt: integer('created_at').notNull().default(now),
+  },
+  (t) => [index('idx_cook_logs_dish').on(t.dishId)],
+)
+
+// ── 本季推荐 / 时令海报（管理员指定；没指定时自动取最近 3 个月做得最多的菜） ──
+export const menuFeatures = sqliteTable('menu_features', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  dishId: text('dish_id')
+    .notNull()
+    .references(() => dishes.id, { onDelete: 'cascade' }),
+  title: text('title'),
+  posterPath: text('poster_path'),
+  // YYYY-MM-DD，可空 = 不限
+  startDate: text('start_date'),
+  endDate: text('end_date'),
+  sort: integer('sort').notNull().default(0),
+  createdAt: integer('created_at').notNull().default(now),
+})
+
 // 类型导出
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
@@ -225,3 +277,6 @@ export type MealSchedule = typeof mealSchedules.$inferSelect
 export type NewMealSchedule = typeof mealSchedules.$inferInsert
 export type MealRole = typeof mealRoles.$inferSelect
 export type RoleKind = MealRole['kind']
+export type DishCategory = typeof dishCategories.$inferSelect
+export type DishCookLog = typeof dishCookLogs.$inferSelect
+export type MenuFeature = typeof menuFeatures.$inferSelect
