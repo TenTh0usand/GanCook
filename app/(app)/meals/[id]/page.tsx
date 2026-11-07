@@ -7,6 +7,7 @@ import { dishes as dishesTable } from '@/lib/db/schema'
 import { requireUser } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
 import { getMealDetail, myOrderedDishIds } from '@/lib/meals'
+import { getSlotRoles } from '@/lib/duties'
 import { MEAL_EMOJI, fmtTime, fmtDateLabel, deadlineText, nowSec } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
 import { Avatar } from '@/components/ui/avatar'
@@ -14,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { List, Row } from '@/components/ui/list'
 import { STATUS_META } from '@/components/meals/meal-card'
 import { MealControls } from '@/components/meals/meal-controls'
+import { MealRolesCard } from '@/components/meals/meal-roles-card'
 import { OrderPicker } from '@/components/meals/order-picker'
 import { ReviewSection } from '@/components/meals/review-section'
 
@@ -28,7 +30,7 @@ export default async function MealDetailPage({
   const me = await requireUser()
   const detail = getMealDetail(id)
   if (!detail) notFound()
-  const { meal, cook, orders, reviews } = detail
+  const { meal, orders, reviews } = detail
   const tz = getSettings().timezone
   const t = await getT()
 
@@ -39,7 +41,10 @@ export default async function MealDetailPage({
     .all()
   const myIds = [...myOrderedDishIds(id, me.id)]
 
-  const isCook = meal.cookId === me.id
+  // GanCook-10k：分工按「日期 + 时段」读取；一个餐次可以多人做菜
+  const roles = getSlotRoles(meal.date, meal.mealType)
+  const cooks = roles.cook
+  const isCook = cooks.some((c) => c.userId === me.id) || meal.cookId === me.id
   const canManage = me.isAdmin || meal.createdBy === me.id || isCook
   const canDelete = me.isAdmin || meal.createdBy === me.id
   const orderingOpen =
@@ -113,14 +118,22 @@ export default async function MealDetailPage({
           </div>
           <div className="flex items-center gap-2">
             <ChefHat className="h-4 w-4 text-accent" />
-            {cook ? (
-              <span className="inline-flex items-center gap-1.5 text-ink">
-                <Avatar
-                  name={cook.name}
-                  src={cook.avatarPath ? `/api/uploads/${cook.avatarPath}` : null}
-                  size={22}
-                />
-                {t('detail.cook', { name: cook.name })}
+            {cooks.length > 0 ? (
+              <span className="inline-flex flex-wrap items-center gap-1.5 text-ink">
+                <span className="flex -space-x-1.5">
+                  {cooks.map((c) => (
+                    <Avatar
+                      key={c.userId}
+                      name={c.name}
+                      src={c.avatarPath ? `/api/uploads/${c.avatarPath}` : null}
+                      size={22}
+                      className="ring-2 ring-[var(--mf-surface)]"
+                    />
+                  ))}
+                </span>
+                {t('detail.cook', {
+                  name: cooks.map((c) => c.name).join(t('common.listSep')),
+                })}
               </span>
             ) : (
               <span className="text-secondary">{t('detail.noCook')}</span>
@@ -134,6 +147,7 @@ export default async function MealDetailPage({
         <MealControls
           meal={meal}
           isCook={isCook}
+          othersCooking={cooks.some((c) => c.userId !== me.id)}
           canManage={canManage}
           canDelete={canDelete}
         />
@@ -205,6 +219,18 @@ export default async function MealDetailPage({
           </List>
         )}
       </section>
+
+      {/* GanCook-10k：这顿的分工（备菜 / 做菜 / 善后）——放在点菜之后，不挡点菜 */}
+      {meal.status !== 'cancelled' && (
+        <div className="mt-6">
+          <MealRolesCard
+            date={meal.date}
+            slot={meal.mealType}
+            roles={roles}
+            meId={me.id}
+          />
+        </div>
+      )}
 
       {meal.status === 'done' && (
         <ReviewSection mealId={meal.id} reviews={reviews} meId={me.id} />

@@ -15,8 +15,12 @@ import {
   unique,
   index,
 } from 'drizzle-orm/sqlite-core'
+import { MEAL_TYPES } from '../roles'
 
 const now = sql`(unixepoch())`
+
+// 餐次时段（含 GanCook-10k 扩展的 加餐 / 夜宵），定义在 lib/roles.ts 以便客户端共用
+export { MEAL_TYPES, type MealType } from '../roles'
 
 /** 时间统一用 unix 秒（integer），便于排序与 dayjs 转换 */
 
@@ -66,7 +70,7 @@ export const meals = sqliteTable(
       .$defaultFn(() => crypto.randomUUID()),
     title: text('title'),
     mealType: text('meal_type', {
-      enum: ['breakfast', 'lunch', 'dinner'],
+      enum: MEAL_TYPES,
     }).notNull(),
     // 日期 YYYY-MM-DD（家庭时区下的自然日，用于唯一约束与展示）
     date: text('date').notNull(),
@@ -154,7 +158,7 @@ export const mealSchedules = sqliteTable('meal_schedules', {
   // 规则名称（像闹钟标签，如「工作日午餐」「周末早午餐」）
   name: text('name').notNull().default('饭局'),
   mealType: text('meal_type', {
-    enum: ['breakfast', 'lunch', 'dinner'],
+    enum: MEAL_TYPES,
   }).notNull(),
   enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
   // 用餐时间 HH:MM（家庭时区）
@@ -177,6 +181,35 @@ export const settings = sqliteTable('settings', {
   value: text('value'),
 })
 
+// ── 餐次分工（GanCook-10k 扩展）：谁在某个餐次参与了 备菜 / 做菜 / 善后 ──
+// 记在「日期 + 时段」上，不依赖饭局：没开饭局也能记；有在家饭局时 mealId 自动关联。
+// 原始记录逐餐次保存；统计时 备菜 / 善后 按「每人每天」去重。
+export const mealRoles = sqliteTable(
+  'meal_roles',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    date: text('date').notNull(),
+    slot: text('slot', { enum: MEAL_TYPES }).notNull(),
+    kind: text('kind', { enum: ['prep', 'cook', 'clean'] }).notNull(),
+    mealId: text('meal_id').references(() => meals.id, { onDelete: 'set null' }),
+    // manual = 自己打卡；meal = 饭局里点「我也来做」；prep_log = 写备菜记录时自动
+    source: text('source', { enum: ['manual', 'meal', 'prep_log'] })
+      .notNull()
+      .default('manual'),
+    createdAt: integer('created_at').notNull().default(now),
+  },
+  (t) => [
+    unique('uniq_meal_role').on(t.userId, t.date, t.slot, t.kind),
+    index('idx_meal_roles_date').on(t.date, t.slot),
+    index('idx_meal_roles_meal').on(t.mealId),
+  ],
+)
+
 // 类型导出
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
@@ -190,3 +223,5 @@ export type Review = typeof reviews.$inferSelect
 export type NewReview = typeof reviews.$inferInsert
 export type MealSchedule = typeof mealSchedules.$inferSelect
 export type NewMealSchedule = typeof mealSchedules.$inferInsert
+export type MealRole = typeof mealRoles.$inferSelect
+export type RoleKind = MealRole['kind']

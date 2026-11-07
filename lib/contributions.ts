@@ -1,31 +1,41 @@
 import 'server-only'
-import { sql, inArray, isNotNull, and } from 'drizzle-orm'
+import { and, eq, inArray, isNull, or } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
-import { meals, orders } from '@/lib/db/schema'
+import { mealRoles, meals, orders } from '@/lib/db/schema'
 import { listMembers } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
 import { dayjs, todayLocal } from '@/lib/time'
+import { CONTRIB_KINDS, type ContribKind } from '@/lib/roles'
 
+/**
+ * 家务贡献统计（GanCook-10k 改造：四种角色）。
+ *
+ * 计数口径（热力图每格 = 一天）：
+ * - 备菜 / 善后：每人每天只要参与过一次就记 1（按天去重）；原始逐餐次记录保留在 raw 里
+ * - 做菜：当天参与做菜的餐次数（关联的饭局若已取消 / 还在点菜中则暂不计）
+ * - 点菜：当天下单参与的饭局数（沿用原逻辑；以后外出就餐不计入）
+ */
 export type MemberContribution = {
   id: string
   name: string
   avatarPath: string | null
-  cookByDate: Record<string, number>
-  orderByDate: Record<string, number>
-  cookTotal: number
-  orderTotal: number
-  streak: number // 连续活跃天数（做饭或点菜）
+  /** 每种角色：日期 → 当天计数（用于热力图） */
+  byDate: Record<ContribKind, Record<string, number>>
+  /** 每种角色：日期 → 原始餐次数（仅备菜 / 善后有意义，悬停提示用） */
+  raw: Record<ContribKind, Record<string, number>>
+  /** 每种角色的总数（备菜 / 善后 = 天数，其余 = 次数） */
+  totals: Record<ContribKind, number>
+  streak: number // 连续活跃天数（任意角色）
 }
 
-/** 当前连续活跃天数（截至今天往前数） */
-function currentStreak(
-  active: Set<string>,
-  today: string,
-): number {
+function emptyKinds<T>(make: () => T): Record<ContribKind, T> {
+  return Object.fromEntries(CONTRIB_KINDS.map((k) => [k, make()])) as Record<ContribKind, T>
+}
+
+/** 当前连续活跃天数：从今天（今天没有就从昨天）往前数 */
+function currentStreak(active: Set<string>, today: string): number {
   let streak = 0
   let d = dayjs(today)
-  // 今天没活动也允许从昨天起算？这里严格：必须含今天才计；否则从最近活跃日回溯
-  // 采用「最近活跃日往前连续」：找到最近活跃日
   if (!active.has(d.format('YYYY-MM-DD'))) {
     if (active.has(d.subtract(1, 'day').format('YYYY-MM-DD'))) d = d.subtract(1, 'day')
     else return 0
@@ -44,80 +54,87 @@ export function getContributions(): {
 } {
   const tz = getSettings().timezone
   const today = todayLocal(tz)
-  const weeks = 18 // 适配手机宽度，整图免横向滚动，最近活动始终可见
+  const weeks = 18 // 13px 格子 × 18 周 ≈ 卡片满宽，手机上整图免横向滚动
 
   const members = listMembers()
   if (members.length === 0) return { members: [], today, weeks }
 
-  // 做饭：按 cookId + 饭局日期 计数（已做/做饭中，排除取消）
-  const cookRows = db
-    .select({
-      userId: meals.cookId,
-      date: meals.date,
-      c: sql<number>`count(*)`,
-    })
-    .from(meals)
-    .where(
-      and(isNotNull(meals.cookId), inArray(meals.status, ['done', 'cooking'])),
-    )
-    .groupBy(meals.cookId, meals.date)
-    .all()
+  // 每人每角色：日期 → 餐次集合（去重用）
+  const slotSets = new Map<string, Record<ContribKind, Map<string, Set<string>>>>()
+  const bucket = (userId: string) => {
+    if (!slotSets.has(userId)) slotSets.set(userId, emptyKinds(() => new Map()))
+    return slotSets.get(userId)!
+  }
+  const add = (userId: string, kind: ContribKind, date: string, key: string) => {
+    const byDay = bucket(userId)[kind]
+    if (!byDay.has(date)) byDay.set(date, new Set())
+    byDay.get(date)!.add(key)
+  }
 
-  // 点菜：按 userId + 下单当天（家庭时区）计「参与的饭局数」
-  // 用 createdAt 反映当天的点菜活跃，而非饭局日期（可能在未来）
-  const orderRows = db
+  // 备菜 / 做菜 / 善后：来自 meal_roles。
+  // 关联饭局已取消、或还在点菜中的「做菜」暂不计（和原逻辑一致：做了才算）
+  const roleRows = db
     .select({
-      userId: orders.userId,
-      mealId: orders.mealId,
-      createdAt: orders.createdAt,
+      userId: mealRoles.userId,
+      date: mealRoles.date,
+      slot: mealRoles.slot,
+      kind: mealRoles.kind,
+      mealStatus: meals.status,
     })
+    .from(mealRoles)
+    .leftJoin(meals, eq(mealRoles.mealId, meals.id))
+    .where(
+      or(
+        inArray(mealRoles.kind, ['prep', 'clean']),
+        isNull(mealRoles.mealId),
+        and(eq(mealRoles.kind, 'cook'), inArray(meals.status, ['cooking', 'done'])),
+      ),
+    )
+    .all()
+  for (const r of roleRows) {
+    if (r.kind === 'cook' && r.mealStatus && !['cooking', 'done'].includes(r.mealStatus)) continue
+    add(r.userId, r.kind, r.date, r.slot)
+  }
+
+  // 点菜：按下单当天（家庭时区）计参与的饭局数
+  const orderRows = db
+    .select({ userId: orders.userId, mealId: orders.mealId, createdAt: orders.createdAt })
     .from(orders)
     .all()
-
-  const cookMap = new Map<string, Record<string, number>>()
-  for (const r of cookRows) {
-    if (!r.userId) continue
-    if (!cookMap.has(r.userId)) cookMap.set(r.userId, {})
-    cookMap.get(r.userId)![r.date] = Number(r.c)
-  }
-
-  // 先按 (user, day) 收集去重的饭局集合，再计数
-  const orderSets = new Map<string, Map<string, Set<string>>>()
   for (const r of orderRows) {
     const day = dayjs.unix(r.createdAt).tz(tz).format('YYYY-MM-DD')
-    if (!orderSets.has(r.userId)) orderSets.set(r.userId, new Map())
-    const byDay = orderSets.get(r.userId)!
-    if (!byDay.has(day)) byDay.set(day, new Set())
-    byDay.get(day)!.add(r.mealId)
-  }
-  const orderMap = new Map<string, Record<string, number>>()
-  for (const [userId, byDay] of orderSets) {
-    const rec: Record<string, number> = {}
-    for (const [day, meals2] of byDay) rec[day] = meals2.size
-    orderMap.set(userId, rec)
+    add(r.userId, 'order', day, r.mealId)
   }
 
-  const result = members.map((m) => {
-    const cookByDate = cookMap.get(m.id) ?? {}
-    const orderByDate = orderMap.get(m.id) ?? {}
-    const active = new Set<string>([
-      ...Object.keys(cookByDate),
-      ...Object.keys(orderByDate),
-    ])
+  const result: MemberContribution[] = members.map((m) => {
+    const sets = slotSets.get(m.id) ?? emptyKinds(() => new Map<string, Set<string>>())
+    const byDate = emptyKinds<Record<string, number>>(() => ({}))
+    const raw = emptyKinds<Record<string, number>>(() => ({}))
+    const totals = emptyKinds(() => 0)
+    const active = new Set<string>()
+    for (const kind of CONTRIB_KINDS) {
+      for (const [day, set] of sets[kind]) {
+        const n = set.size
+        const daily = kind === 'prep' || kind === 'clean' ? 1 : n
+        byDate[kind][day] = daily
+        raw[kind][day] = n
+        totals[kind] += daily
+        active.add(day)
+      }
+    }
     return {
       id: m.id,
       name: m.name,
       avatarPath: m.avatarPath,
-      cookByDate,
-      orderByDate,
-      cookTotal: Object.values(cookByDate).reduce((a, b) => a + b, 0),
-      orderTotal: Object.values(orderByDate).reduce((a, b) => a + b, 0),
+      byDate,
+      raw,
+      totals,
       streak: currentStreak(active, today),
     }
   })
 
-  // 做饭多的排前面
-  result.sort((a, b) => b.cookTotal - a.cookTotal || b.orderTotal - a.orderTotal)
+  const sum = (m: MemberContribution) => CONTRIB_KINDS.reduce((a, k) => a + m.totals[k], 0)
+  result.sort((a, b) => sum(b) - sum(a) || b.totals.cook - a.totals.cook)
 
   return { members: result, today, weeks }
 }

@@ -16,13 +16,12 @@ export const MEAL_LABELS: Record<string, string> = {
   breakfast: '早餐',
   lunch: '午餐',
   dinner: '晚餐',
+  snack: '加餐',
+  late: '夜宵',
 }
 
-export const MEAL_EMOJI: Record<string, string> = {
-  breakfast: '🌅',
-  lunch: '🍱',
-  dinner: '🍲',
-}
+// 餐次 emoji 统一定义在 lib/roles.ts（客户端组件也要用）
+export { MEAL_EMOJI } from '@/lib/roles'
 
 /** 当前 unix 秒 */
 export function nowSec(): number {

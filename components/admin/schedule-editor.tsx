@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Segmented } from '@/components/ui/segmented'
 import { cn } from '@/lib/utils'
-import { MEAL_EMOJI } from '@/lib/time'
+import { MEAL_EMOJI, MEAL_TYPES, type MealType } from '@/lib/roles'
 import { useT } from '@/components/i18n-provider'
 import {
   updateSchedule,
@@ -16,8 +16,6 @@ import {
   deleteSchedule,
 } from '@/lib/actions/admin'
 import type { MealSchedule } from '@/lib/db/schema'
-
-type MealType = 'breakfast' | 'lunch' | 'dinner'
 
 function ScheduleRow({ s }: { s: MealSchedule }) {
   const t = useT()
@@ -95,11 +93,8 @@ function ScheduleRow({ s }: { s: MealSchedule }) {
           value={mealType}
           onChange={setMealType}
           layoutId={`stype-${s.id}`}
-          options={[
-            { value: 'breakfast', label: t('meal.breakfast') },
-            { value: 'lunch', label: t('meal.lunch') },
-            { value: 'dinner', label: t('meal.dinner') },
-          ]}
+          className="[&_button]:px-1"
+          options={MEAL_TYPES.map((m) => ({ value: m, label: t('meal.' + m) }))}
         />
         <div className="flex items-center gap-2 text-sm">
           <span className="w-20 text-secondary">{t('schedule.diningTime')}</span>

@@ -11,11 +11,14 @@ import type { Meal } from '@/lib/db/schema'
 export function MealControls({
   meal,
   isCook,
+  othersCooking = false,
   canManage,
   canDelete,
 }: {
   meal: Meal
   isCook: boolean
+  /** GanCook-10k：已有别人在做这顿 → 按钮文案变成「我也来做」 */
+  othersCooking?: boolean
   canManage: boolean
   canDelete: boolean
 }) {
@@ -40,7 +43,11 @@ export function MealControls({
           onClick={() => run(() => toggleCook(meal.id))}
         >
           <ChefHat className="h-5 w-5" />
-          {isCook ? t('controls.uncook') : t('controls.cook')}
+          {isCook
+            ? t('controls.uncook')
+            : othersCooking
+              ? t('controls.cookJoin')
+              : t('controls.cook')}
         </Button>
       )}
 

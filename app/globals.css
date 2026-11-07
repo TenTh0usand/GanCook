@@ -33,6 +33,19 @@
   /* 高光 */
   --mf-highlight: 255 255 255;
 
+  /* GanCook-10k · 角色色（只用于「角色语义」：贡献、家务打卡、备菜等；按钮 / 导航仍用青菜绿）
+     低饱和、与青菜绿同一亮度档；-soft 为 RGB 三元组，给 rgb(var(--x) / a) 做淡色底与热力图深浅 */
+  --mf-role-prep: #e3954a; /* 备菜 · 南瓜橙 */
+  --mf-role-prep-soft: 227 149 74;
+  --mf-role-cook: #4ea96b; /* 做菜 · 青菜绿（= 品牌主色） */
+  --mf-role-cook-soft: 78 169 107;
+  --mf-role-order: #9a7fc8; /* 点菜 · 茄子紫 */
+  --mf-role-order-soft: 154 127 200;
+  --mf-role-clean: #4a9ccf; /* 善后 · 泡泡蓝 */
+  --mf-role-clean-soft: 74 156 207;
+  --mf-role-out: #d9779a; /* 外出 · 莓果粉 */
+  --mf-role-out-soft: 217 119 154;
+
   --radius: 24px;
 }
 
@@ -50,6 +63,17 @@
     --mf-ink: #eef2ec;
     --mf-secondary: #9aa89d;
     --mf-highlight: 255 255 255;
+    /* 角色色 · 暗色模式稍提亮 */
+    --mf-role-prep: #f0a965;
+    --mf-role-prep-soft: 240 169 101;
+    --mf-role-cook: #6fc488;
+    --mf-role-cook-soft: 111 196 136;
+    --mf-role-order: #b29ce0;
+    --mf-role-order-soft: 178 156 224;
+    --mf-role-clean: #6cb6e3;
+    --mf-role-clean-soft: 108 182 227;
+    --mf-role-out: #ec93b3;
+    --mf-role-out-soft: 236 147 179;
   }
 }
 

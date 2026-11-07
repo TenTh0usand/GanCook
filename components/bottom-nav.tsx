@@ -3,15 +3,24 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Home, UtensilsCrossed, ChefHat, Sprout, User } from 'lucide-react'
+import {
+  Home,
+  UtensilsCrossed,
+  ShoppingBasket,
+  ChefHat,
+  BarChart3,
+  User,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/components/i18n-provider'
 
+// GanCook-10k：新增「备菜」，「贡献」改为「统计」；6 个 Tab，每个 52px（小屏也放得下）
 const TABS = [
   { href: '/home', key: 'nav.home', icon: Home },
   { href: '/meals', key: 'nav.meals', icon: UtensilsCrossed },
+  { href: '/prep', key: 'nav.prep', icon: ShoppingBasket },
   { href: '/dishes', key: 'nav.dishes', icon: ChefHat },
-  { href: '/wall', key: 'nav.wall', icon: Sprout },
+  { href: '/stats', key: 'nav.stats', icon: BarChart3 },
   { href: '/me', key: 'nav.me', icon: User },
 ] as const
 
@@ -31,7 +40,7 @@ export function BottomNav() {
               key={tab.href}
               href={tab.href}
               className={cn(
-                'relative flex h-12 w-[58px] flex-col items-center justify-center gap-0.5 rounded-full text-[11px] font-medium',
+                'relative flex h-12 w-[52px] flex-col items-center justify-center gap-0.5 rounded-full text-[11px] font-medium',
                 active ? 'text-accent' : 'text-secondary',
               )}
             >

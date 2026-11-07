@@ -9,6 +9,8 @@ import { getSettings } from '@/lib/settings'
 import { getMeal } from '@/lib/meals'
 import { localDateTimeToSec, nowSec } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
+import { hasRole, removeMealSourcedRoles, toggleRole } from '@/lib/duties'
+import { isMealType, type MealType } from '@/lib/roles'
 
 export type ActionResult =
   | { ok: true; id?: string }
@@ -18,7 +20,7 @@ const reDate = /^\d{4}-\d{2}-\d{2}$/
 const reTime = /^\d{2}:\d{2}$/
 
 export async function createMeal(input: {
-  mealType: 'breakfast' | 'lunch' | 'dinner'
+  mealType: MealType
   date: string
   diningTime: string
   deadline: string
@@ -28,6 +30,7 @@ export async function createMeal(input: {
   const me = await getCurrentUser()
   if (!me) return { ok: false, error: t('err.loginRequired') }
 
+  if (!isMealType(input.mealType)) return { ok: false, error: t('err.badInput') }
   if (!reDate.test(input.date)) return { ok: false, error: t('err.dateFmt') }
   if (!reTime.test(input.diningTime) || !reTime.test(input.deadline))
     return { ok: false, error: t('err.timeFmt') }
@@ -63,24 +66,36 @@ export async function deleteMeal(id: string): Promise<ActionResult> {
   if (!meal) return { ok: true }
   if (meal.createdBy !== me.id && !me.isAdmin)
     return { ok: false, error: t('err.onlyCreatorMeal') }
+  removeMealSourcedRoles(id)
   db.delete(meals).where(eq(meals.id, id)).run()
   revalidatePath('/meals')
   revalidatePath('/home')
   return { ok: true }
 }
 
-/** 认领/取消「我来做这顿」（可接管他人） */
+/**
+ * 「我也来做 / 我不做了」（GanCook-10k：一个餐次可多人做菜）。
+ * 做菜记录写在 meal_roles 上；meals.cookId 自动同步为第一个做菜的人。
+ */
 export async function toggleCook(id: string): Promise<ActionResult> {
   const t = await getT()
   const me = await getCurrentUser()
   if (!me) return { ok: false, error: t('err.loginRequired') }
   const meal = getMeal(id)
   if (!meal) return { ok: false, error: t('err.mealNotFound') }
-  const next = meal.cookId === me.id ? null : me.id
-  db.update(meals).set({ cookId: next }).where(eq(meals.id, id)).run()
+  toggleRole({
+    userId: me.id,
+    date: meal.date,
+    slot: meal.mealType,
+    kind: 'cook',
+    source: 'meal',
+    mealId: meal.id,
+  })
   revalidatePath(`/meals/${id}`)
   revalidatePath('/meals')
   revalidatePath('/home')
+  revalidatePath('/me')
+  revalidatePath('/stats')
   return { ok: true }
 }
 
@@ -93,7 +108,11 @@ export async function setMealStatus(
   if (!me) return { ok: false, error: t('err.loginRequired') }
   const meal = getMeal(id)
   if (!meal) return { ok: false, error: t('err.mealNotFound') }
-  const allowed = me.isAdmin || meal.createdBy === me.id || meal.cookId === me.id
+  const allowed =
+    me.isAdmin ||
+    meal.createdBy === me.id ||
+    meal.cookId === me.id ||
+    hasRole(me.id, meal.date, meal.mealType, 'cook')
   if (!allowed) return { ok: false, error: t('err.cookOrAdmin') }
   db.update(meals).set({ status }).where(eq(meals.id, id)).run()
   revalidatePath(`/meals/${id}`)

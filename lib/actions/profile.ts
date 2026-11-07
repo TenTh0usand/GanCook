@@ -49,6 +49,6 @@ export async function updateProfile(form: FormData): Promise<ActionResult> {
 
   revalidatePath('/me')
   revalidatePath('/home')
-  revalidatePath('/wall')
+  revalidatePath('/stats')
   return { ok: true }
 }

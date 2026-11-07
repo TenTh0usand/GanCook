@@ -13,13 +13,15 @@ import { Button } from '@/components/ui/button'
 import { Segmented } from '@/components/ui/segmented'
 import { useT } from '@/components/i18n-provider'
 import { createMeal } from '@/lib/actions/meals'
+import { MEAL_TYPES, type MealType } from '@/lib/roles'
 
-type MealType = 'breakfast' | 'lunch' | 'dinner'
-
+// GanCook-10k：加餐、夜宵
 const DEFAULTS: Record<MealType, { dining: string; deadline: string }> = {
   breakfast: { dining: '07:30', deadline: '07:00' },
   lunch: { dining: '12:00', deadline: '10:00' },
   dinner: { dining: '18:30', deadline: '16:00' },
+  snack: { dining: '15:30', deadline: '14:30' },
+  late: { dining: '22:00', deadline: '21:00' },
 }
 
 export function CreateMealDialog({
@@ -72,11 +74,8 @@ export function CreateMealDialog({
               value={mealType}
               onChange={changeType}
               layoutId="create-meal-type"
-              options={[
-                { value: 'breakfast', label: t('meal.breakfast') },
-                { value: 'lunch', label: t('meal.lunch') },
-                { value: 'dinner', label: t('meal.dinner') },
-              ]}
+              className="[&_button]:px-1"
+              options={MEAL_TYPES.map((m) => ({ value: m, label: t('meal.' + m) }))}
             />
           </div>
 

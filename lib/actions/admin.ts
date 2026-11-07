@@ -8,6 +8,7 @@ import { mealSchedules, users } from '@/lib/db/schema'
 import { getCurrentUser } from '@/lib/auth/user'
 import { setSetting } from '@/lib/settings'
 import { getT } from '@/lib/i18n/server'
+import { MEAL_TYPES } from '@/lib/roles'
 import type { User } from '@/lib/db/schema'
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
@@ -44,7 +45,7 @@ export async function updateFamilySettings(input: {
 
 const scheduleSchema = z.object({
   name: z.string().trim().min(1, '请填写规则名称').max(20),
-  mealType: z.enum(['breakfast', 'lunch', 'dinner']),
+  mealType: z.enum(MEAL_TYPES),
   enabled: z.boolean(),
   diningTime: z.string().regex(/^\d{2}:\d{2}$/, '时间格式不对'),
   createLeadHours: z.number().int().min(0).max(72),
