@@ -1,0 +1,13 @@
+# Dockerfile.prebuilt 专用忽略规则（BuildKit 会优先使用与 Dockerfile 同名的 .dockerignore）
+# 只放行镜像需要的几样东西，其余一律排除
+*
+!.next/standalone
+!.next/static
+!public
+!drizzle
+!docker-entrypoint.sh
+
+# ⚠️ standalone 里会被顺带打包进开发库，绝不能进正式镜像
+.next/standalone/data
+.next/standalone/.env*
+.next/standalone/doc
