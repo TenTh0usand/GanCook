@@ -369,6 +369,23 @@ const zh: Messages = {
   'err.categoryName': '请填写分类名称',
   'err.cantDeleteOther': '「其他」不能删除',
   'err.pickDish': '请先选一道菜',
+  // ── GanCook-10k · P3 评分 ──
+  'score.simple': '简易',
+  'score.sci': '科学',
+  'score.simpleHint': '点星星可以点半颗，也可以直接在右边输入 1.0–5.0',
+  'score.overall': '综合',
+  'score.overallAuto': '算法待定，暂取上面几项的平均',
+  'score.overallManual': '已手动修改',
+  'score.useAvg': '改回平均',
+  'score.radarLegend': '虚线 = 全家平均（只算用科学评分的人）',
+  'score.familyAvg': '全家平均 {n} 分 · {k} 人',
+  'score.familyRadar': '全家平均（{k} 人用了科学评分）',
+  'score.dim.taste': '味道',
+  'score.dim.texture': '口感',
+  'score.dim.look': '卖相',
+  'score.dim.portion': '份量',
+  'score.dim.value': '性价比',
+  'score.dim.experience': '体验',
 }
 
 const en: Messages = {
@@ -719,6 +736,23 @@ const en: Messages = {
   'err.categoryName': 'Please enter a category name',
   'err.cantDeleteOther': '"Other" cannot be deleted',
   'err.pickDish': 'Please pick a dish first',
+  // ── GanCook-10k · P3 scoring ──
+  'score.simple': 'Quick',
+  'score.sci': 'Detailed',
+  'score.simpleHint': 'Tap half or full stars, or type 1.0–5.0 on the right',
+  'score.overall': 'Overall',
+  'score.overallAuto': 'Formula TBD — average of the items above for now',
+  'score.overallManual': 'Edited manually',
+  'score.useAvg': 'Use average',
+  'score.radarLegend': 'Dashed = family average (detailed scores only)',
+  'score.familyAvg': 'Family avg {n} · {k} people',
+  'score.familyRadar': 'Family average ({k} detailed)',
+  'score.dim.taste': 'Taste',
+  'score.dim.texture': 'Texture',
+  'score.dim.look': 'Looks',
+  'score.dim.portion': 'Portion',
+  'score.dim.value': 'Value',
+  'score.dim.experience': 'Experience',
 }
 
 export const dictionaries: Record<Locale, Messages> = { zh, en }

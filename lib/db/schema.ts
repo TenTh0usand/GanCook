@@ -16,6 +16,7 @@ import {
   index,
 } from 'drizzle-orm/sqlite-core'
 import { MEAL_TYPES } from '../roles'
+import type { ScoreDim } from '../scoring'
 
 const now = sql`(unixepoch())`
 
@@ -146,6 +147,11 @@ export const reviews = sqliteTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     rating: integer('rating').notNull(),
     comment: text('comment'),
+    // GanCook-10k（P3 评分）：分数 ×10 存整数（4.5 → 45），rating 保留并自动同步为四舍五入的整数
+    scoreX10: integer('score_x10'),
+    mode: text('mode', { enum: ['simple', 'sci'] }).notNull().default('simple'),
+    // 科学评分六个维度（各自 ×10），简易评分为空
+    dims: text('dims', { mode: 'json' }).$type<Partial<Record<ScoreDim, number>>>(),
     createdAt: integer('created_at').notNull().default(now),
   },
   (t) => [

@@ -3,6 +3,7 @@ import { eq, and, desc, asc } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import { meals, orders, dishes, users, reviews } from '@/lib/db/schema'
 import type { Meal } from '@/lib/db/schema'
+import type { ScoreDim } from '@/lib/scoring'
 
 export type OrderDetail = {
   id: string
@@ -19,6 +20,10 @@ export type ReviewDetail = {
   id: string
   rating: number
   comment: string | null
+  /** GanCook-10k（P3）：分数 ×10、评分方式、科学评分维度 */
+  scoreX10: number | null
+  mode: 'simple' | 'sci'
+  dims: Partial<Record<ScoreDim, number>> | null
   userId: string
   userName: string
   userAvatar: string | null
@@ -74,6 +79,9 @@ export function getMealDetail(id: string): MealDetail | null {
       id: reviews.id,
       rating: reviews.rating,
       comment: reviews.comment,
+      scoreX10: reviews.scoreX10,
+      mode: reviews.mode,
+      dims: reviews.dims,
       userId: users.id,
       userName: users.name,
       userAvatar: users.avatarPath,
@@ -89,6 +97,23 @@ export function getMealDetail(id: string): MealDetail | null {
 
 export function listMeals(): Meal[] {
   return db.select().from(meals).orderBy(desc(meals.diningTime)).all()
+}
+
+/** GanCook-10k（P3）：每顿饭的全家平均分（×10），饭局卡片用 */
+export function getMealScores(): Map<string, { avg: number; n: number }> {
+  const rows = db
+    .select({ mealId: reviews.mealId, score: reviews.scoreX10, rating: reviews.rating })
+    .from(reviews)
+    .all()
+  const acc = new Map<string, { sum: number; n: number }>()
+  for (const r of rows) {
+    const v = r.score ?? r.rating * 10
+    const a = acc.get(r.mealId) ?? { sum: 0, n: 0 }
+    a.sum += v
+    a.n++
+    acc.set(r.mealId, a)
+  }
+  return new Map([...acc].map(([k, a]) => [k, { avg: Math.round(a.sum / a.n), n: a.n }]))
 }
 
 /** 我在某饭局点的菜 id 集合 */

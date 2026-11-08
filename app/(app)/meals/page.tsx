@@ -1,7 +1,7 @@
 import { Plus, UtensilsCrossed } from 'lucide-react'
 import { requireUser, listMembers } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
-import { listMeals } from '@/lib/meals'
+import { listMeals, getMealScores } from '@/lib/meals'
 import { getCookNamesBySlot } from '@/lib/duties'
 import { db } from '@/lib/db/client'
 import { orders } from '@/lib/db/schema'
@@ -34,6 +34,8 @@ export default async function MealsPage() {
   const members = new Map(listMembers().map((m) => [m.id, m.name]))
   // GanCook-10k：一个餐次可多人做菜，卡片上显示全部做菜人
   const cookNames = getCookNamesBySlot(meals.map((m) => m.date))
+  // GanCook-10k（P3）：卡片上显示全家平均分
+  const scores = getMealScores()
   const cookLabel = (m: (typeof meals)[number]) =>
     cookNames.get(`${m.date}|${m.mealType}`)?.join(t('common.listSep')) ??
     (m.cookId ? members.get(m.cookId) : null)
@@ -83,6 +85,7 @@ export default async function MealsPage() {
               meal={m}
               tz={tz}
               cookName={cookLabel(m)}
+              score={scores.get(m.id)?.avg ?? null}
               participants={participants.get(m.id)?.size ?? 0}
             />
           ))}
@@ -98,6 +101,7 @@ export default async function MealsPage() {
                   meal={m}
                   tz={tz}
                   cookName={cookLabel(m)}
+              score={scores.get(m.id)?.avg ?? null}
                   participants={participants.get(m.id)?.size ?? 0}
                 />
               ))}

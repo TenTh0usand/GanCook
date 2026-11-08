@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Clock, Users, ChefHat, ChevronRight } from 'lucide-react'
+import { Clock, Users, ChefHat, ChevronRight, Star } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { MEAL_EMOJI, fmtTime, fmtDateLabel } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
@@ -29,11 +29,14 @@ export async function MealCard({
   cookName,
   participants,
   tz,
+  score,
 }: {
   meal: Meal
   cookName?: string | null
   participants?: number
   tz?: string
+  /** GanCook-10k（P3）：全家平均分（×10） */
+  score?: number | null
 }) {
   const t = await getT()
   const status = STATUS_META[meal.status]
@@ -79,9 +82,17 @@ export async function MealCard({
         </div>
       </div>
 
-      <div className="relative flex shrink-0 items-center gap-1">
-        <Badge tone={status.tone}>{t(status.labelKey)}</Badge>
-        <ChevronRight className="h-4 w-4 text-secondary/40" />
+      <div className="relative flex shrink-0 flex-col items-end gap-1">
+        {score != null && (
+          <span className="inline-flex items-center gap-0.5 pr-5 text-[13px] font-bold text-[#b3791f]">
+            <Star className="h-3.5 w-3.5 fill-[#f0b429] text-[#f0b429]" />
+            {(score / 10).toFixed(1)}
+          </span>
+        )}
+        <div className="flex items-center gap-1">
+          <Badge tone={status.tone}>{t(status.labelKey)}</Badge>
+          <ChevronRight className="h-4 w-4 text-secondary/40" />
+        </div>
       </div>
     </Link>
   )
