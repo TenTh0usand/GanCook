@@ -3,10 +3,15 @@ import { ChevronLeft } from 'lucide-react'
 import { requireAdmin, listMembers } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
 import { db } from '@/lib/db/client'
-import { mealSchedules } from '@/lib/db/schema'
+import { mealSchedules, dishes, menuFeatures } from '@/lib/db/schema'
+import { asc } from 'drizzle-orm'
+import { todayLocal } from '@/lib/time'
+import { getMenuDishes, listCategories } from '@/lib/menus'
 import { PageHeader } from '@/components/page-header'
 import { getT } from '@/lib/i18n/server'
 import { FamilySettings } from '@/components/admin/family-settings'
+import { FeatureManager } from '@/components/admin/feature-manager'
+import { CategoryManager } from '@/components/admin/category-manager'
 import { ScheduleEditor } from '@/components/admin/schedule-editor'
 import { MembersManager } from '@/components/admin/members-manager'
 import { RunSchedule } from '@/components/admin/run-schedule'
@@ -33,6 +38,41 @@ export default async function AdminPage() {
     isAdmin: m.isAdmin,
   }))
 
+  // GanCook-10k（P2）：菜单设置数据
+  const today = todayLocal(s.timezone)
+  const categories = listCategories().map((c) => ({
+    id: c.id,
+    name: c.name,
+    parentId: c.parentId,
+    badge: c.badge,
+  }))
+  const allDishes = db.select().from(dishes).all()
+  const categoryCounts: Record<string, number> = {}
+  for (const d of allDishes) {
+    const main = d.category ?? 'other'
+    categoryCounts[main] = (categoryCounts[main] ?? 0) + 1
+    if (d.subcategory) categoryCounts[d.subcategory] = (categoryCounts[d.subcategory] ?? 0) + 1
+  }
+  const features = db
+    .select()
+    .from(menuFeatures)
+    .orderBy(asc(menuFeatures.sort), asc(menuFeatures.createdAt))
+    .all()
+    .map((f) => ({
+      id: f.id,
+      dishId: f.dishId,
+      title: f.title,
+      posterPath: f.posterPath,
+      startDate: f.startDate,
+      endDate: f.endDate,
+    }))
+  const featureDishes = getMenuDishes().map((d) => ({
+    id: d.id,
+    name: d.name,
+    imagePath: d.imagePath,
+    cookTotal: d.cook.total,
+  }))
+
   return (
     <>
       <div className="mb-4">
@@ -52,6 +92,19 @@ export default async function AdminPage() {
           registrationOpen={s.registrationOpen}
           joinCode={s.joinCode}
         />
+      </section>
+
+      {/* GanCook-10k（P2）：菜单设置 —— 本季推荐 + 分类管理 */}
+      <section className="mb-7">
+        <h2 className="mb-1 text-base font-semibold text-ink">{t('feature.sectionTitle')}</h2>
+        <p className="mb-3 text-sm text-secondary">{t('feature.sectionDesc')}</p>
+        <FeatureManager features={features} dishes={featureDishes} today={today} />
+      </section>
+
+      <section className="mb-7">
+        <h2 className="mb-1 text-base font-semibold text-ink">{t('catmgr.sectionTitle')}</h2>
+        <p className="mb-3 text-sm text-secondary">{t('catmgr.sectionDesc')}</p>
+        <CategoryManager categories={categories} counts={categoryCounts} />
       </section>
 
       <section className="mb-7">

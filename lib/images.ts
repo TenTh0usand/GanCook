@@ -13,7 +13,7 @@ const MAX_SIDE = 1280
 
 export async function saveImage(
   buffer: Buffer,
-  subdir: 'dishes' | 'avatars',
+  subdir: 'dishes' | 'avatars' | 'posters',
 ): Promise<string> {
   const dir = join(UPLOAD_DIR, subdir)
   await mkdir(dir, { recursive: true })
