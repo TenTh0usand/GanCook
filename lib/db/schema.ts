@@ -286,3 +286,47 @@ export type RoleKind = MealRole['kind']
 export type DishCategory = typeof dishCategories.$inferSelect
 export type DishCookLog = typeof dishCookLogs.$inferSelect
 export type MenuFeature = typeof menuFeatures.$inferSelect
+export type PrepLog = typeof prepLogs.$inferSelect
+export type PrepItem = typeof prepItems.$inferSelect
+
+// ── 备菜记录（GanCook-10k · P4）：某人某餐次买了啥 / 用了冰箱里的啥 / 怎么处理的 ──
+// 只有「食材名称」必填；数量是自由文字（如「1.2斤」「3个」），价格可不填
+export const prepLogs = sqliteTable(
+  'prep_logs',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+    date: text('date').notNull(),
+    slot: text('slot', { enum: MEAL_TYPES }).notNull(),
+    mealId: text('meal_id').references(() => meals.id, { onDelete: 'set null' }),
+    // 处理方式（自由文字）
+    note: text('note'),
+    imagePath: text('image_path'),
+    createdAt: integer('created_at').notNull().default(now),
+  },
+  (t) => [index('idx_prep_logs_date').on(t.date)],
+)
+
+export const prepItems = sqliteTable(
+  'prep_items',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    logId: text('log_id')
+      .notNull()
+      .references(() => prepLogs.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    // bought = 买的；fridge = 冰箱里的；other = 别人给的 / 自己种的等
+    source: text('source', { enum: ['bought', 'fridge', 'other'] })
+      .notNull()
+      .default('bought'),
+    qty: text('qty'),
+    // 价格（分）；可空。以后 P6 菜价库会从这里联动
+    priceCents: integer('price_cents'),
+    sort: integer('sort').notNull().default(0),
+  },
+  (t) => [index('idx_prep_items_log').on(t.logId)],
+)
