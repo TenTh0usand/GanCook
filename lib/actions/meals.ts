@@ -9,7 +9,7 @@ import { getSettings } from '@/lib/settings'
 import { getMeal } from '@/lib/meals'
 import { localDateTimeToSec, nowSec } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
-import { hasRole, removeMealSourcedRoles, toggleRole } from '@/lib/duties'
+import { hasRole, linkSlotToMeal, removeMealSourcedRoles, toggleRole } from '@/lib/duties'
 import { isMealType, type MealType } from '@/lib/roles'
 
 export type ActionResult =
@@ -39,20 +39,24 @@ export async function createMeal(input: {
   const diningSec = localDateTimeToSec(input.date, input.diningTime, tz)
   const deadlineSec = localDateTimeToSec(input.date, input.deadline, tz)
 
-  const row = db
-    .insert(meals)
-    .values({
-      title: input.title?.trim().slice(0, 30) || null,
-      mealType: input.mealType,
-      date: input.date,
-      diningTime: diningSec,
-      orderDeadline: deadlineSec,
-      status: 'ordering',
-      isAuto: false,
-      createdBy: me.id,
-    })
-    .returning()
-    .get()
+  const row = db.transaction(() => {
+    const created = db
+      .insert(meals)
+      .values({
+        title: input.title?.trim().slice(0, 30) || null,
+        mealType: input.mealType,
+        date: input.date,
+        diningTime: diningSec,
+        orderDeadline: deadlineSec,
+        status: 'ordering',
+        isAuto: false,
+        createdBy: me.id,
+      })
+      .returning()
+      .get()
+    linkSlotToMeal(input.date, input.mealType, created.id)
+    return created
+  })
   revalidatePath('/meals')
   revalidatePath('/home')
   return { ok: true, id: row.id }
@@ -66,10 +70,15 @@ export async function deleteMeal(id: string): Promise<ActionResult> {
   if (!meal) return { ok: true }
   if (meal.createdBy !== me.id && !me.isAdmin)
     return { ok: false, error: t('err.onlyCreatorMeal') }
-  removeMealSourcedRoles(id)
-  db.delete(meals).where(eq(meals.id, id)).run()
+  db.transaction(() => {
+    removeMealSourcedRoles(id)
+    db.delete(meals).where(eq(meals.id, id)).run()
+  })
   revalidatePath('/meals')
   revalidatePath('/home')
+  revalidatePath('/dishes')
+  revalidatePath('/stats')
+  revalidatePath('/me')
   return { ok: true }
 }
 
@@ -118,6 +127,8 @@ export async function setMealStatus(
   revalidatePath(`/meals/${id}`)
   revalidatePath('/meals')
   revalidatePath('/home')
+  revalidatePath('/dishes')
+  revalidatePath('/stats')
   return { ok: true }
 }
 
@@ -154,6 +165,10 @@ export async function toggleOrder(
       .run()
   }
   revalidatePath(`/meals/${mealId}`)
+  revalidatePath(`/meals/${mealId}/order`)
+  revalidatePath('/meals')
   revalidatePath('/home')
+  revalidatePath('/me')
+  revalidatePath('/stats')
   return { ok: true }
 }

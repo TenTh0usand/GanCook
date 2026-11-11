@@ -6,7 +6,7 @@ import { db } from '@/lib/db/client'
 import { users } from '@/lib/db/schema'
 import { getCurrentUser, getUserByName } from '@/lib/auth/user'
 import { createSession } from '@/lib/auth/session'
-import { saveImage, deleteImage, fileToBuffer } from '@/lib/images'
+import { saveImage, deleteImage, fileToBuffer, imageUploadError } from '@/lib/images'
 import { getT } from '@/lib/i18n/server'
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
@@ -32,13 +32,7 @@ export async function updateProfile(form: FormData): Promise<ActionResult> {
       await deleteImage(me.avatarPath)
       avatarPath = newPath
     } catch (e) {
-      return {
-        ok: false,
-        error:
-          (e as Error).message === 'IMAGE_TOO_LARGE'
-            ? t('err.imageTooLarge')
-            : t('err.imageOnly'),
-      }
+      return { ok: false, error: imageUploadError(t, e) }
     }
   }
 
@@ -50,5 +44,10 @@ export async function updateProfile(form: FormData): Promise<ActionResult> {
   revalidatePath('/me')
   revalidatePath('/home')
   revalidatePath('/stats')
+  revalidatePath('/login')
+  revalidatePath('/admin')
+  revalidatePath('/meals', 'layout')
+  revalidatePath('/prep')
+  revalidatePath('/dishes')
   return { ok: true }
 }

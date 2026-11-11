@@ -19,7 +19,7 @@ export default async function DishesPage() {
   const t = await getT()
 
   const categories = listCategories()
-  const data = getMenuBrowserData(t, { includeArchived: true })
+  const data = getMenuBrowserData(t, { includeArchived: true, categories })
   const ids = Object.keys(data.dishes)
   const logsByDish = Object.fromEntries(getCookLogsFor(ids))
   const extraBase: Omit<DishSheetExtra, 'cook'> = {

@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { List, Row } from '@/components/ui/list'
+import { Row } from '@/components/ui/list'
 import { Segmented } from '@/components/ui/segmented'
 import { Switch } from '@/components/ui/switch'
 import { useT } from '@/components/i18n-provider'
@@ -41,10 +41,14 @@ export function TodayDuties({
   const [day, setDay] = React.useState<'today' | 'yesterday'>('today')
   const [slot, setSlot] = React.useState<MealType>(defaultSlot)
   const [data, setData] = React.useState(initial)
+  const [prevInitial, setPrevInitial] = React.useState(initial)
   const [error, setError] = React.useState('')
   const [, startTransition] = React.useTransition()
 
-  React.useEffect(() => setData(initial), [initial])
+  if (prevInitial !== initial) {
+    setPrevInitial(initial)
+    setData(initial)
+  }
 
   const date = day === 'today' ? today : yesterday
   const dayRoles = data[date] ?? {}

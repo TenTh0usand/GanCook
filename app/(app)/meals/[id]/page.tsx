@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { ChevronLeft, Clock, Timer, ChefHat, Soup, UtensilsCrossed } from 'lucide-react'
 import { requireUser } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
-import { getMealDetail, myOrderedDishIds } from '@/lib/meals'
+import { getMealDetail } from '@/lib/meals'
 import { getSlotRoles } from '@/lib/duties'
 import { MEAL_EMOJI, fmtTime, fmtDateLabel, deadlineText, nowSec } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
@@ -30,7 +30,7 @@ export default async function MealDetailPage({
   const tz = getSettings().timezone
   const t = await getT()
 
-  const myIds = [...myOrderedDishIds(id, me.id)]
+  const myOrders = orders.filter((o) => o.userId === me.id)
 
   // GanCook-10k：分工按「日期 + 时段」读取；一个餐次可以多人做菜
   const roles = getSlotRoles(meal.date, meal.mealType)
@@ -44,11 +44,11 @@ export default async function MealDetailPage({
   // 按菜聚合「谁点了」
   const byDish = new Map<
     string,
-    { name: string; image: string | null; people: { id: string; name: string; avatar: string | null }[] }
+    { id: string; name: string; image: string | null; people: { id: string; name: string; avatar: string | null }[] }
   >()
   for (const o of orders) {
     if (!byDish.has(o.dishId))
-      byDish.set(o.dishId, { name: o.dishName, image: o.dishImage, people: [] })
+      byDish.set(o.dishId, { id: o.dishId, name: o.dishName, image: o.dishImage, people: [] })
     byDish.get(o.dishId)!.people.push({
       id: o.userId,
       name: o.userName,
@@ -157,19 +157,16 @@ export default async function MealDetailPage({
             <span className="relative min-w-0 flex-1">
               <span className="block text-[15px] font-semibold text-ink">
                 {t('detail.pick')}
-                {myIds.length > 0 && t('detail.picked', { n: myIds.length })}
+                {myOrders.length > 0 && t('detail.picked', { n: myOrders.length })}
               </span>
               <span className="mt-0.5 block truncate text-xs text-secondary">
-                {myIds.length > 0
-                  ? orders
-                      .filter((o) => o.userId === me.id)
-                      .map((o) => o.dishName)
-                      .join(t('common.listSep'))
+                {myOrders.length > 0
+                  ? myOrders.map((o) => o.dishName).join(t('common.listSep'))
                   : t('order.cta')}
               </span>
             </span>
             <span className="relative mf-accent-fill shrink-0 rounded-full px-4 py-2 text-sm font-bold">
-              {myIds.length > 0 ? t('order.edit') : t('order.go')}
+              {myOrders.length > 0 ? t('order.edit') : t('order.go')}
             </span>
           </Link>
         </section>
@@ -198,7 +195,7 @@ export default async function MealDetailPage({
           <List>
             {dishGroups.map((g) => (
               <Row
-                key={g.name}
+                key={g.id}
                 chevron={false}
                 leading={
                   <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-trough">

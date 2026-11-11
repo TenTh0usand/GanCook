@@ -22,7 +22,13 @@ export type FeatureRow = {
   endDate: string | null
 }
 
-export type FeatureDishOption = { id: string; name: string; imagePath: string | null; cookTotal: number }
+export type FeatureDishOption = {
+  id: string
+  name: string
+  imagePath: string | null
+  cookTotal: number
+  archived?: boolean
+}
 
 /**
  * 本季推荐管理（GanCook-10k · P2 第 4 步）。
@@ -83,6 +89,11 @@ export function FeatureManager({
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[15px] font-medium text-ink">{d?.name ?? '—'}</span>
+                    {d?.archived && (
+                      <span className="shrink-0 rounded-full bg-trough px-1.5 py-[1px] text-[10px] font-semibold text-secondary/70">
+                        {t('dishes.archived')}
+                      </span>
+                    )}
                     <span className={cn('shrink-0 rounded-full px-1.5 py-[1px] text-[10px] font-semibold', st.cls)}>{st.label}</span>
                   </span>
                   <span className="mt-0.5 block truncate text-xs text-secondary">
@@ -148,7 +159,9 @@ function FeatureDialog({
   const [error, setError] = React.useState('')
   const [pending, startTransition] = React.useTransition()
 
-  const list = dishes.filter((d) => !q.trim() || d.name.includes(q.trim()))
+  const list = dishes.filter(
+    (d) => (!d.archived || d.id === dishId) && (!q.trim() || d.name.includes(q.trim())),
+  )
 
   const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]

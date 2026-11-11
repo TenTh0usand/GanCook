@@ -21,6 +21,7 @@ export function FamilySettings({
   const [registrationOpen, setRegistrationOpen] = useState(initOpen)
   const [joinCode, setJoinCode] = useState(initCode)
   const [msg, setMsg] = useState('')
+  const [isErr, setIsErr] = useState(false)
   const [pending, startTransition] = useTransition()
   const t = useT()
 
@@ -32,6 +33,7 @@ export function FamilySettings({
         registrationOpen,
         joinCode,
       })
+      setIsErr(!res.ok)
       setMsg(res.ok ? t('common.saved') : res.error)
     })
   }
@@ -70,7 +72,7 @@ export function FamilySettings({
         <Button loading={pending} onClick={save}>
           {t('admin.saveSettings')}
         </Button>
-        {msg && <span className="text-sm text-accent">{msg}</span>}
+        {msg && <span className={isErr ? 'text-sm text-danger' : 'text-sm text-accent'}>{msg}</span>}
       </div>
     </div>
   )

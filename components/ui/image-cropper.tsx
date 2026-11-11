@@ -1,12 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import Cropper from 'react-easy-crop'
 import 'react-easy-crop/react-easy-crop.css'
 import { Button } from '@/components/ui/button'
 import { useT } from '@/components/i18n-provider'
 import { getCroppedBlob, type CropArea } from '@/lib/client/crop-image'
+
+const emptySubscribe = () => () => {}
 
 /** 全屏图片裁剪器。aspect=1 为方形（圆形预览，用于头像）。 */
 export function ImageCropper({
@@ -27,8 +29,7 @@ export function ImageCropper({
   const [zoom, setZoom] = useState(1)
   const [pixels, setPixels] = useState<CropArea | null>(null)
   const [busy, setBusy] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
 
   const onCropComplete = useCallback((_: unknown, areaPixels: CropArea) => {
     setPixels(areaPixels)

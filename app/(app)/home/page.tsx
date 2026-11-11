@@ -2,13 +2,10 @@ import { Plus, UtensilsCrossed, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { requireUser, listMembers } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
-import { listMeals, getMealScores } from '@/lib/meals'
+import { listMeals, getMealParticipantCounts, getMealScores } from '@/lib/meals'
 import { getCookNamesBySlot } from '@/lib/duties'
-import { db } from '@/lib/db/client'
-import { orders } from '@/lib/db/schema'
 import { dayjs, todayLocal } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
-import { PageHeader } from '@/components/page-header'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { MealCard } from '@/components/meals/meal-card'
@@ -45,21 +42,14 @@ export default async function HomePage() {
         a.diningTime - b.diningTime,
     )
 
-  const orderRows = db
-    .select({ mealId: orders.mealId, userId: orders.userId })
-    .from(orders)
-    .all()
-  const participants = new Map<string, Set<string>>()
-  for (const r of orderRows) {
-    if (!participants.has(r.mealId)) participants.set(r.mealId, new Set())
-    participants.get(r.mealId)!.add(r.userId)
-  }
+  const upcomingIds = upcomingMeals.map((m) => m.id)
+  const participants = getMealParticipantCounts(upcomingIds)
   const members = new Map(listMembers().map((m) => [m.id, m.name]))
   // GanCook-10k：一个餐次可多人做菜，卡片上显示全部做菜人
-  const cookNames = getCookNamesBySlot(meals.map((m) => m.date))
+  const cookNames = getCookNamesBySlot(upcomingMeals.map((m) => m.date))
   // GanCook-10k（P3）：卡片上显示全家平均分
-  const scores = getMealScores()
-  const cookLabel = (m: (typeof meals)[number]) =>
+  const scores = getMealScores(upcomingIds)
+  const cookLabel = (m: (typeof upcomingMeals)[number]) =>
     cookNames.get(`${m.date}|${m.mealType}`)?.join(t('common.listSep')) ??
     (m.cookId ? members.get(m.cookId) : null)
 
@@ -109,7 +99,7 @@ export default async function HomePage() {
               tz={tz}
               cookName={cookLabel(m)}
               score={scores.get(m.id)?.avg ?? null}
-              participants={participants.get(m.id)?.size ?? 0}
+              participants={participants.get(m.id) ?? 0}
             />
           ))}
         </div>

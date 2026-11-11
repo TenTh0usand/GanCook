@@ -4,6 +4,7 @@ import { db } from '@/lib/db/client'
 import { meals, mealSchedules } from '@/lib/db/schema'
 import { getSettings } from '@/lib/settings'
 import { dayjs, localDateTimeToSec, nowSec } from '@/lib/time'
+import { linkSlotToMeal } from '@/lib/duties'
 
 // 用餐时间过后多久自动标记「已完成」
 const DONE_AFTER_SEC = 4 * 3600
@@ -21,75 +22,81 @@ export type TickResult = {
 export function tick(): TickResult {
   const tz = getSettings().timezone
   const now = nowSec()
-  let created = 0
 
-  // 1) 按规则创建到点的饭局
-  const schedules = db
-    .select()
-    .from(mealSchedules)
-    .where(eq(mealSchedules.enabled, true))
-    .all()
+  return db.transaction(() => {
+    let created = 0
 
-  for (const s of schedules) {
-    // 检查未来 3 天内的候选日期（覆盖较大的提前量）
-    for (let offset = 0; offset <= 2; offset++) {
-      const day = dayjs().tz(tz).add(offset, 'day')
-      const date = day.format('YYYY-MM-DD')
-      if (!s.weekdays.includes(day.day())) continue
+    // 1) 按规则创建到点的饭局
+    const schedules = db
+      .select()
+      .from(mealSchedules)
+      .where(eq(mealSchedules.enabled, true))
+      .all()
 
-      const diningSec = localDateTimeToSec(date, s.diningTime, tz)
-      const createSec = diningSec - s.createLeadHours * 3600
-      // 到了创建时刻、且用餐时间还没过
-      if (now < createSec || now >= diningSec) continue
+    for (const s of schedules) {
+      // 检查未来 3 天内的候选日期（覆盖较大的提前量）
+      for (let offset = 0; offset <= 2; offset++) {
+        const day = dayjs().tz(tz).add(offset, 'day')
+        const date = day.format('YYYY-MM-DD')
+        if (!s.weekdays.includes(day.day())) continue
 
-      const deadlineSec = diningSec - s.deadlineLeadMinutes * 60
+        const diningSec = localDateTimeToSec(date, s.diningTime, tz)
+        const createSec = diningSec - s.createLeadHours * 3600
+        // 到了创建时刻、且用餐时间还没过
+        if (now < createSec || now >= diningSec) continue
 
-      // 幂等：同一规则同一天只建一次
-      const exists = db
-        .select({ id: meals.id })
-        .from(meals)
-        .where(and(eq(meals.scheduleId, s.id), eq(meals.date, date)))
-        .get()
-      if (exists) continue
+        const deadlineSec = diningSec - s.deadlineLeadMinutes * 60
 
-      db.insert(meals)
-        .values({
-          title: s.name,
-          mealType: s.mealType,
-          date,
-          diningTime: diningSec,
-          orderDeadline: deadlineSec,
-          status: 'ordering',
-          isAuto: true,
-          scheduleId: s.id,
-        })
-        .run()
-      created++
+        // 幂等：同一规则同一天只建一次
+        const exists = db
+          .select({ id: meals.id })
+          .from(meals)
+          .where(and(eq(meals.scheduleId, s.id), eq(meals.date, date)))
+          .get()
+        if (exists) continue
+
+        const row = db
+          .insert(meals)
+          .values({
+            title: s.name,
+            mealType: s.mealType,
+            date,
+            diningTime: diningSec,
+            orderDeadline: deadlineSec,
+            status: 'ordering',
+            isAuto: true,
+            scheduleId: s.id,
+          })
+          .returning({ id: meals.id })
+          .get()
+        linkSlotToMeal(date, s.mealType, row.id)
+        created++
+      }
     }
-  }
 
-  // 2) 点菜截止 → 做饭中
-  const started = db
-    .update(meals)
-    .set({ status: 'cooking' })
-    .where(
-      and(eq(meals.status, 'ordering'), lte(meals.orderDeadline, now)),
-    )
-    .run().changes
+    // 2) 点菜截止 → 做饭中
+    const started = db
+      .update(meals)
+      .set({ status: 'cooking' })
+      .where(
+        and(eq(meals.status, 'ordering'), lte(meals.orderDeadline, now)),
+      )
+      .run().changes
 
-  // 3) 用餐结束 → 已完成（含错过截止仍在 ordering 的）
-  const finished = db
-    .update(meals)
-    .set({ status: 'done' })
-    .where(
-      and(
-        inArray(meals.status, ['ordering', 'cooking']),
-        lte(meals.diningTime, now - DONE_AFTER_SEC),
-      ),
-    )
-    .run().changes
+    // 3) 用餐结束 → 已完成（含错过截止仍在 ordering 的）
+    const finished = db
+      .update(meals)
+      .set({ status: 'done' })
+      .where(
+        and(
+          inArray(meals.status, ['ordering', 'cooking']),
+          lte(meals.diningTime, now - DONE_AFTER_SEC),
+        ),
+      )
+      .run().changes
 
-  return { created, started, finished }
+    return { created, started, finished }
+  })
 }
 
 // 进程内 cron 只启动一次

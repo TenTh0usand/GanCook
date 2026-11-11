@@ -1,10 +1,8 @@
 import { Plus, UtensilsCrossed } from 'lucide-react'
 import { requireUser, listMembers } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
-import { listMeals, getMealScores } from '@/lib/meals'
+import { listMeals, getMealParticipantCounts, getMealScores } from '@/lib/meals'
 import { getCookNamesBySlot } from '@/lib/duties'
-import { db } from '@/lib/db/client'
-import { orders } from '@/lib/db/schema'
 import { dayjs, todayLocal } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
 import { PageHeader } from '@/components/page-header'
@@ -20,22 +18,15 @@ export default async function MealsPage() {
   const t = await getT()
   const tz = getSettings().timezone
   const meals = listMeals()
+  const mealIds = meals.map((m) => m.id)
 
   // 每个饭局的点菜人数
-  const orderRows = db
-    .select({ mealId: orders.mealId, userId: orders.userId })
-    .from(orders)
-    .all()
-  const participants = new Map<string, Set<string>>()
-  for (const r of orderRows) {
-    if (!participants.has(r.mealId)) participants.set(r.mealId, new Set())
-    participants.get(r.mealId)!.add(r.userId)
-  }
+  const participants = getMealParticipantCounts(mealIds)
   const members = new Map(listMembers().map((m) => [m.id, m.name]))
   // GanCook-10k：一个餐次可多人做菜，卡片上显示全部做菜人
   const cookNames = getCookNamesBySlot(meals.map((m) => m.date))
   // GanCook-10k（P3）：卡片上显示全家平均分
-  const scores = getMealScores()
+  const scores = getMealScores(mealIds)
   const cookLabel = (m: (typeof meals)[number]) =>
     cookNames.get(`${m.date}|${m.mealType}`)?.join(t('common.listSep')) ??
     (m.cookId ? members.get(m.cookId) : null)
@@ -86,7 +77,7 @@ export default async function MealsPage() {
               tz={tz}
               cookName={cookLabel(m)}
               score={scores.get(m.id)?.avg ?? null}
-              participants={participants.get(m.id)?.size ?? 0}
+              participants={participants.get(m.id) ?? 0}
             />
           ))}
 
@@ -101,8 +92,8 @@ export default async function MealsPage() {
                   meal={m}
                   tz={tz}
                   cookName={cookLabel(m)}
-              score={scores.get(m.id)?.avg ?? null}
-                  participants={participants.get(m.id)?.size ?? 0}
+                  score={scores.get(m.id)?.avg ?? null}
+                  participants={participants.get(m.id) ?? 0}
                 />
               ))}
             </>

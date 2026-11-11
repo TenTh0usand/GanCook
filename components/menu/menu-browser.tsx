@@ -206,7 +206,7 @@ export function MenuBrowser({
                     onClick={orderMode ? () => onToggle!(d.id) : undefined}
                   />
                 )
-                return wrap ? wrap(d, node, `p-${p.dishId}`) : <React.Fragment key={`p-${p.dishId}`}>{node}</React.Fragment>
+                return wrap ? wrap(d, node, `p-${p.id}`) : <React.Fragment key={`p-${p.id}`}>{node}</React.Fragment>
               })}
             </div>
           )}

@@ -68,6 +68,21 @@ export function DishForm({
   const readOnly = mode === 'edit' && !canManage
   const catName = (id: string | null) => extra.categories.find((c) => c.id === id)?.name
 
+  const onOpenChange = (next: boolean) => {
+    if (next) {
+      setName(dish?.name ?? '')
+      setDescription(dish?.description ?? '')
+      setTags((dish?.tags ?? []).join(' '))
+      setCategory(dish?.category ?? null)
+      setSubcategory(dish?.subcategory ?? null)
+      setPinned(dish?.pinned ?? false)
+      setBlob(null)
+      setPreview(dish?.imagePath ? `/api/uploads/${dish.imagePath}` : null)
+      setError('')
+    }
+    setOpen(next)
+  }
+
   const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (!f) return
@@ -113,14 +128,16 @@ export function DishForm({
 
   const runStatus = (status: 'active' | 'archived') =>
     startTransition(async () => {
-      await setDishStatus(dish!.id, status)
+      const res = await setDishStatus(dish!.id, status)
+      if (!res.ok) return setError(res.error)
       setOpen(false)
       router.refresh()
     })
 
   const runDelete = () =>
     startTransition(async () => {
-      await deleteDish(dish!.id)
+      const res = await deleteDish(dish!.id)
+      if (!res.ok) return setError(res.error)
       setOpen(false)
       router.refresh()
     })
@@ -139,7 +156,7 @@ export function DishForm({
     ) : null
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent
         title={

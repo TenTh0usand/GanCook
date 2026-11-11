@@ -51,7 +51,8 @@
 | `./manage.sh dev-restart` / `dev-logs` | 开发服务器 |
 | `npx drizzle-kit generate --name xxx` | 改 schema 后生成迁移（`drizzle/000N_xxx.sql`），可在末尾追加数据迁移 SQL（用 `--> statement-breakpoint` 分隔） |
 | `npm run db:migrate` | 对开发库应用迁移（正式环境容器启动时自动迁移） |
-| `npx tsc --noEmit -p .` | 类型检查（ESLint 在本项目跑不起来，见 §8） |
+| `npx tsc --noEmit -p .` | 类型检查 |
+| `npm run lint` | ESLint 9 代码检查（已切换原生 Flat Config） |
 | `node scripts-dev/seed-test.cjs` | **重置开发库测试数据**（3 个测试账号、19 道菜、40 天历史、评分、备菜） |
 | `node scripts-dev/dev-token.cjs 妈妈` | 生成开发环境登录 cookie（`gancook_session=...`），给自动化测试用 |
 
@@ -115,7 +116,6 @@ GanCook-10k 新增 / 改动的关键文件：
 | 需求池 | 菜单分享 / 导出导入（社区反馈） | P2 已完成，可随时插队 |
 | 需求池 | 冰箱库存（备菜买进 / 用掉增减）、自动生成买菜清单、消息推送（Bark / Telegram / 飞书） | — |
 | 待定 | 科学评分综合分算法 | 只改 `lib/scoring.ts` 的 `overallFromDims()` |
-| 技术债 | ESLint 配置在 ESLint 9 下崩溃（原项目问题，`Converting circular structure to JSON`） | 目前以 `tsc` + `next build` 把关 |
 
 ## 9. 自动化测试与工具（Windows 端）
 

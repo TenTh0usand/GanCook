@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db/client'
 import { users } from '@/lib/db/schema'
@@ -31,15 +32,17 @@ export async function setupAdmin(input: {
 
   const familyName = input.familyName.trim().slice(0, 20) || '我家'
   const passwordHash = await hashPassword(input.pin)
-  const user = db
-    .insert(users)
-    .values({ name, passwordHash, isAdmin: true })
-    .returning()
-    .get()
-
-  setSetting('familyName', familyName)
-  setSetting('registrationOpen', '1')
-  seedDefaultSchedules()
+  const user = db.transaction(() => {
+    const created = db
+      .insert(users)
+      .values({ name, passwordHash, isAdmin: true })
+      .returning()
+      .get()
+    setSetting('familyName', familyName)
+    setSetting('registrationOpen', '1')
+    seedDefaultSchedules()
+    return created
+  })
 
   await createSession({ userId: user.id, name: user.name, isAdmin: true })
   redirect('/home')
@@ -74,6 +77,8 @@ export async function register(input: {
     .get()
 
   await createSession({ userId: user.id, name: user.name, isAdmin: false })
+  revalidatePath('/login')
+  revalidatePath('/admin')
   redirect('/home')
 }
 

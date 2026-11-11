@@ -6,7 +6,7 @@ import { db } from '@/lib/db/client'
 import { mealSchedules, dishes, menuFeatures } from '@/lib/db/schema'
 import { asc } from 'drizzle-orm'
 import { todayLocal } from '@/lib/time'
-import { getMenuDishes, listCategories } from '@/lib/menus'
+import { getCookStats, listCategories } from '@/lib/menus'
 import { PageHeader } from '@/components/page-header'
 import { getT } from '@/lib/i18n/server'
 import { FamilySettings } from '@/components/admin/family-settings'
@@ -46,10 +46,11 @@ export default async function AdminPage() {
     parentId: c.parentId,
     badge: c.badge,
   }))
+  const knownMain = new Set(categories.filter((c) => !c.parentId).map((c) => c.id))
   const allDishes = db.select().from(dishes).all()
   const categoryCounts: Record<string, number> = {}
   for (const d of allDishes) {
-    const main = d.category ?? 'other'
+    const main = d.category && knownMain.has(d.category) ? d.category : 'other'
     categoryCounts[main] = (categoryCounts[main] ?? 0) + 1
     if (d.subcategory) categoryCounts[d.subcategory] = (categoryCounts[d.subcategory] ?? 0) + 1
   }
@@ -66,12 +67,16 @@ export default async function AdminPage() {
       startDate: f.startDate,
       endDate: f.endDate,
     }))
-  const featureDishes = getMenuDishes().map((d) => ({
-    id: d.id,
-    name: d.name,
-    imagePath: d.imagePath,
-    cookTotal: d.cook.total,
-  }))
+  const cookStats = getCookStats()
+  const featureDishes = allDishes
+    .map((d) => ({
+      id: d.id,
+      name: d.name,
+      imagePath: d.imagePath,
+      cookTotal: cookStats.get(d.id)?.total ?? 0,
+      archived: d.status === 'archived',
+    }))
+    .sort((a, b) => b.cookTotal - a.cookTotal || a.name.localeCompare(b.name, 'zh-CN'))
 
   return (
     <>

@@ -39,6 +39,7 @@ function ScheduleRow({ s }: { s: MealSchedule }) {
   )
   const [weekdays, setWeekdays] = useState<number[]>(s.weekdays)
   const [msg, setMsg] = useState('')
+  const [isErr, setIsErr] = useState(false)
   const [pending, startTransition] = useTransition()
 
   const toggleDay = (d: number) =>
@@ -58,6 +59,7 @@ function ScheduleRow({ s }: { s: MealSchedule }) {
         deadlineLeadMinutes: Number(deadlineLead) || 0,
         weekdays,
       })
+      setIsErr(!res.ok)
       setMsg(res.ok ? t('common.saved') : res.error)
     })
   }
@@ -157,7 +159,7 @@ function ScheduleRow({ s }: { s: MealSchedule }) {
           <Trash2 className="h-4 w-4" />
           {t('common.delete')}
         </button>
-        {msg && <span className="text-sm text-accent">{msg}</span>}
+        {msg && <span className={cn('text-sm', isErr ? 'text-danger' : 'text-accent')}>{msg}</span>}
       </div>
     </div>
   )

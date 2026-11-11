@@ -7,9 +7,9 @@ import { mealRoles, prepItems, prepLogs } from '@/lib/db/schema'
 import { getCurrentUser } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
 import { todayLocal } from '@/lib/time'
-import { saveImage, deleteImage, fileToBuffer } from '@/lib/images'
+import { saveImage, deleteImage, fileToBuffer, imageUploadError } from '@/lib/images'
 import { getT } from '@/lib/i18n/server'
-import { hasRole, toggleRole } from '@/lib/duties'
+import { findMealForSlot, hasRole, toggleRole } from '@/lib/duties'
 import { isMealType, type MealType } from '@/lib/roles'
 import { parsePriceCents } from '@/lib/prep'
 
@@ -48,10 +48,31 @@ function refresh() {
   revalidatePath('/me')
 }
 
+function cleanupPrepRoleIfNoLogs(userId: string, date: string, slot: MealType) {
+  const others = db
+    .select({ id: prepLogs.id })
+    .from(prepLogs)
+    .where(and(eq(prepLogs.userId, userId), eq(prepLogs.date, date), eq(prepLogs.slot, slot)))
+    .get()
+  if (!others) {
+    db.delete(mealRoles)
+      .where(
+        and(
+          eq(mealRoles.userId, userId),
+          eq(mealRoles.date, date),
+          eq(mealRoles.slot, slot),
+          eq(mealRoles.kind, 'prep'),
+          eq(mealRoles.source, 'prep_log'),
+        ),
+      )
+      .run()
+  }
+}
+
 /**
  * 新建 / 修改一条备菜记录（GanCook-10k · P4）。
  * - 至少要有一样食材（只有名称必填）
- * - 新建时自动给自己打上该餐次的「备菜」（已打过就不动）
+ * - 新建或改餐次时自动给记录人打上该餐次的「备菜」（已打过就不动）
  * - 修改：本人或管理员
  */
 export async function savePrepLog(form: FormData): Promise<ActionResult> {
@@ -68,46 +89,62 @@ export async function savePrepLog(form: FormData): Promise<ActionResult> {
   const items = readItems(form)
   if (items.length === 0) return { ok: false, error: t('err.prepNeedItem') }
 
+  const cur = id ? db.select().from(prepLogs).where(eq(prepLogs.id, id)).get() : null
+  if (id) {
+    if (!cur) return { ok: false, error: t('err.badInput') }
+    if (cur.userId !== me.id && !me.isAdmin) return { ok: false, error: t('err.onlyOwnLog') }
+  }
+
   let imagePath: string | null | undefined = undefined
   const file = form.get('image')
   if (file instanceof File && file.size > 0) {
     try {
       imagePath = await saveImage(await fileToBuffer(file), 'prep')
-    } catch {
-      return { ok: false, error: t('err.imageOnly') }
+    } catch (e) {
+      return { ok: false, error: imageUploadError(t, e) }
     }
+  } else if (cur && form.get('removeImage') === '1') {
+    imagePath = null
   }
 
-  let logId = id
-  if (id) {
-    const cur = db.select().from(prepLogs).where(eq(prepLogs.id, id)).get()
-    if (!cur) return { ok: false, error: t('err.badInput') }
-    if (cur.userId !== me.id && !me.isAdmin) return { ok: false, error: t('err.onlyOwnLog') }
-    if (imagePath !== undefined) await deleteImage(cur.imagePath)
-    else if (form.get('removeImage') === '1') {
-      await deleteImage(cur.imagePath)
-      imagePath = null
+  const oldImageToDelete = cur && imagePath !== undefined ? cur.imagePath : null
+
+  const logId = db.transaction(() => {
+    const mealId = findMealForSlot(date, slot)
+    if (cur) {
+      db.update(prepLogs)
+        .set({ date, slot, mealId, note, ...(imagePath !== undefined ? { imagePath } : {}) })
+        .where(eq(prepLogs.id, cur.id))
+        .run()
+      db.delete(prepItems).where(eq(prepItems.logId, cur.id)).run()
+      for (const it of items) db.insert(prepItems).values({ logId: cur.id, ...it }).run()
+
+      if (cur.userId && (cur.date !== date || cur.slot !== slot)) {
+        cleanupPrepRoleIfNoLogs(cur.userId, cur.date, cur.slot)
+        if (!hasRole(cur.userId, date, slot, 'prep')) {
+          toggleRole({ userId: cur.userId, date, slot, kind: 'prep', source: 'prep_log', mealId })
+        }
+      }
+      return cur.id
     }
-    db.update(prepLogs)
-      .set({ date, slot, note, ...(imagePath !== undefined ? { imagePath } : {}) })
-      .where(eq(prepLogs.id, id))
-      .run()
-    db.delete(prepItems).where(eq(prepItems.logId, id)).run()
-  } else {
+
     const row = db
       .insert(prepLogs)
-      .values({ userId: me.id, date, slot, note, imagePath: imagePath ?? null })
+      .values({ userId: me.id, date, slot, mealId, note, imagePath: imagePath ?? null })
       .returning()
       .get()
-    logId = row.id
+    for (const it of items) db.insert(prepItems).values({ logId: row.id, ...it }).run()
     // 写了备菜记录 = 参与了这个餐次的备菜
-    if (!hasRole(me.id, date, slot, 'prep'))
-      toggleRole({ userId: me.id, date, slot, kind: 'prep', source: 'prep_log' })
-  }
-  for (const it of items) db.insert(prepItems).values({ logId: logId!, ...it }).run()
+    if (!hasRole(me.id, date, slot, 'prep')) {
+      toggleRole({ userId: me.id, date, slot, kind: 'prep', source: 'prep_log', mealId })
+    }
+    return row.id
+  })
+
+  if (oldImageToDelete) await deleteImage(oldImageToDelete)
 
   refresh()
-  return { ok: true, id: logId! }
+  return { ok: true, id: logId }
 }
 
 /** 删除备菜记录：本人或管理员。由这条记录自动打上的「备菜」，在该餐次没有其他记录时一并取消 */
@@ -118,28 +155,13 @@ export async function deletePrepLog(id: string): Promise<ActionResult> {
   const cur = db.select().from(prepLogs).where(eq(prepLogs.id, id)).get()
   if (!cur) return { ok: true }
   if (cur.userId !== me.id && !me.isAdmin) return { ok: false, error: t('err.onlyOwnLog') }
-  await deleteImage(cur.imagePath)
-  db.delete(prepLogs).where(eq(prepLogs.id, id)).run()
 
-  if (cur.userId) {
-    const others = db
-      .select({ id: prepLogs.id })
-      .from(prepLogs)
-      .where(and(eq(prepLogs.userId, cur.userId), eq(prepLogs.date, cur.date), eq(prepLogs.slot, cur.slot)))
-      .get()
-    if (!others)
-      db.delete(mealRoles)
-        .where(
-          and(
-            eq(mealRoles.userId, cur.userId),
-            eq(mealRoles.date, cur.date),
-            eq(mealRoles.slot, cur.slot),
-            eq(mealRoles.kind, 'prep'),
-            eq(mealRoles.source, 'prep_log'),
-          ),
-        )
-        .run()
-  }
+  db.transaction(() => {
+    db.delete(prepLogs).where(eq(prepLogs.id, id)).run()
+    if (cur.userId) cleanupPrepRoleIfNoLogs(cur.userId, cur.date, cur.slot)
+  })
+  await deleteImage(cur.imagePath)
+
   refresh()
   return { ok: true }
 }

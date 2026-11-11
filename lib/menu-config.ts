@@ -67,6 +67,7 @@ export type BrowserMenu = {
 }
 
 export type BrowserPoster = {
+  id: string
   dishId: string
   title: string
   posterPath: string | null

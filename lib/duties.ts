@@ -1,7 +1,7 @@
 import 'server-only'
-import { and, asc, eq, inArray, ne } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, ne } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
-import { mealRoles, meals, orders, users } from '@/lib/db/schema'
+import { mealRoles, meals, orders, prepLogs, users } from '@/lib/db/schema'
 import type { MealType, DutyKind, ContribKind } from '@/lib/roles'
 
 /**
@@ -33,21 +33,6 @@ export function getSlotRoles(date: string, slot: MealType): SlotRoles {
     .all()
   const res: SlotRoles = { prep: [], cook: [], clean: [] }
   for (const r of rows) res[r.kind].push({ userId: r.userId, name: r.name, avatarPath: r.avatarPath })
-  return res
-}
-
-/** 某人某天各餐次参与了哪些角色：{ lunch: ['cook'], dinner: ['prep','clean'] } */
-export function getMyRolesForDate(
-  userId: string,
-  date: string,
-): Partial<Record<MealType, DutyKind[]>> {
-  const rows = db
-    .select({ slot: mealRoles.slot, kind: mealRoles.kind })
-    .from(mealRoles)
-    .where(and(eq(mealRoles.userId, userId), eq(mealRoles.date, date)))
-    .all()
-  const res: Partial<Record<MealType, DutyKind[]>> = {}
-  for (const r of rows) (res[r.slot] ??= []).push(r.kind)
   return res
 }
 
@@ -144,7 +129,7 @@ export function hasRole(userId: string, date: string, slot: MealType, kind: Duty
 }
 
 /** 找该餐次第一个未取消的饭局（用于自动关联） */
-function findMealForSlot(date: string, slot: MealType): string | null {
+export function findMealForSlot(date: string, slot: MealType): string | null {
   const row = db
     .select({ id: meals.id })
     .from(meals)
@@ -214,6 +199,19 @@ export function syncMealCooks(date: string, slot: MealType) {
     .set({ cookId: first?.userId ?? null })
     .where(and(eq(meals.date, date), eq(meals.mealType, slot)))
     .run()
+}
+
+/** 新建饭局后：把该餐次已有的分工和备菜记录关联到该饭局，并同步掌勺人 */
+export function linkSlotToMeal(date: string, slot: MealType, mealId: string) {
+  db.update(mealRoles)
+    .set({ mealId })
+    .where(and(eq(mealRoles.date, date), eq(mealRoles.slot, slot), isNull(mealRoles.mealId)))
+    .run()
+  db.update(prepLogs)
+    .set({ mealId })
+    .where(and(eq(prepLogs.date, date), eq(prepLogs.slot, slot), isNull(prepLogs.mealId)))
+    .run()
+  syncMealCooks(date, slot)
 }
 
 /** 删除饭局时：清掉通过该饭局「我也来做」产生的做菜记录（手动打卡的保留） */

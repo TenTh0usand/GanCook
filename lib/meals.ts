@@ -1,5 +1,5 @@
 import 'server-only'
-import { eq, and, desc, asc } from 'drizzle-orm'
+import { eq, and, desc, asc, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import { meals, orders, dishes, users, reviews } from '@/lib/db/schema'
 import type { Meal } from '@/lib/db/schema'
@@ -31,7 +31,6 @@ export type ReviewDetail = {
 
 export type MealDetail = {
   meal: Meal
-  cook: { id: string; name: string; avatarPath: string | null } | null
   orders: OrderDetail[]
   reviews: ReviewDetail[]
 }
@@ -43,18 +42,6 @@ export function getMeal(id: string): Meal | undefined {
 export function getMealDetail(id: string): MealDetail | null {
   const meal = getMeal(id)
   if (!meal) return null
-
-  const cook = meal.cookId
-    ? db
-        .select({
-          id: users.id,
-          name: users.name,
-          avatarPath: users.avatarPath,
-        })
-        .from(users)
-        .where(eq(users.id, meal.cookId))
-        .get() ?? null
-    : null
 
   const orderRows = db
     .select({
@@ -92,19 +79,37 @@ export function getMealDetail(id: string): MealDetail | null {
     .orderBy(asc(reviews.createdAt))
     .all()
 
-  return { meal, cook, orders: orderRows, reviews: reviewRows }
+  return { meal, orders: orderRows, reviews: reviewRows }
 }
 
 export function listMeals(): Meal[] {
   return db.select().from(meals).orderBy(desc(meals.diningTime)).all()
 }
 
-/** GanCook-10k（P3）：每顿饭的全家平均分（×10），饭局卡片用 */
-export function getMealScores(): Map<string, { avg: number; n: number }> {
+/** 一批饭局的点菜人数（SQL GROUP BY 去重统计） */
+export function getMealParticipantCounts(mealIds: string[]): Map<string, number> {
+  const map = new Map<string, number>()
+  if (mealIds.length === 0) return map
   const rows = db
+    .select({
+      mealId: orders.mealId,
+      count: sql<number>`count(distinct ${orders.userId})`,
+    })
+    .from(orders)
+    .where(inArray(orders.mealId, mealIds))
+    .groupBy(orders.mealId)
+    .all()
+  for (const r of rows) map.set(r.mealId, Number(r.count))
+  return map
+}
+
+/** GanCook-10k（P3）：每顿饭的全家平均分（×10），饭局卡片用 */
+export function getMealScores(mealIds?: string[]): Map<string, { avg: number; n: number }> {
+  if (mealIds && mealIds.length === 0) return new Map()
+  const base = db
     .select({ mealId: reviews.mealId, score: reviews.scoreX10, rating: reviews.rating })
     .from(reviews)
-    .all()
+  const rows = mealIds ? base.where(inArray(reviews.mealId, mealIds)).all() : base.all()
   const acc = new Map<string, { sum: number; n: number }>()
   for (const r of rows) {
     const v = r.score ?? r.rating * 10

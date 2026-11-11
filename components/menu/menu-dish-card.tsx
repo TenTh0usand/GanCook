@@ -21,13 +21,20 @@ export const MenuDishCard = React.forwardRef<
     picked?: boolean
     dimmed?: boolean
   }
->(({ dish, labels, picked, dimmed, className, ...props }, ref) => {
+>(({ dish, labels, picked, dimmed, className, onKeyDown, ...props }, ref) => {
   const orderMode = typeof picked === 'boolean'
   return (
     <div
       ref={ref}
       role="button"
       tabIndex={0}
+      onKeyDown={(e) => {
+        onKeyDown?.(e)
+        if (!e.defaultPrevented && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          e.currentTarget.click()
+        }
+      }}
       className={cn(
         'mf-raised mf-pressable relative overflow-hidden p-0 text-left',
         picked && 'ring-2 ring-accent ring-offset-2 ring-offset-base',

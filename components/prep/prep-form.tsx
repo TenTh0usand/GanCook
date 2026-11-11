@@ -97,10 +97,16 @@ export function PrepForm({
   const update = (key: number, patch: Partial<Row>) =>
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)))
 
-  const total = rows.reduce((a, r) => {
-    const v = Number(r.price.replace(/[¥￥元\s]/g, ''))
-    return a + (r.name.trim() && Number.isFinite(v) && v > 0 ? v : 0)
+  const totalCents = rows.reduce((a, r) => {
+    const v = Number(r.price.replace(/[¥￥元\s,，]/g, ''))
+    return a + (r.name.trim() && Number.isFinite(v) && v > 0 ? Math.round(v * 100) : 0)
   }, 0)
+  const fmtCents = (cents: number) =>
+    cents % 100 === 0
+      ? String(cents / 100)
+      : cents % 10 === 0
+        ? (cents / 100).toFixed(1)
+        : (cents / 100).toFixed(2)
 
   const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -244,9 +250,9 @@ export function PrepForm({
                 <Plus className="h-4 w-4" />
                 {t('prep.addItem')}
               </button>
-              {total > 0 && (
+              {totalCents > 0 && (
                 <span className="text-sm font-semibold text-[var(--mf-role-prep)]">
-                  {t('prep.total', { n: total.toFixed(total % 1 ? 1 : 0) })}
+                  {t('prep.total', { n: fmtCents(totalCents) })}
                 </span>
               )}
             </div>

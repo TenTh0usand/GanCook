@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
-import { join, normalize, extname } from 'node:path'
+import { extname, resolve, sep } from 'node:path'
 import { UPLOAD_DIR } from '@/lib/env'
+
+const UPLOAD_ROOT = resolve(UPLOAD_DIR)
 
 const TYPES: Record<string, string> = {
   '.webp': 'image/webp',
@@ -15,14 +17,14 @@ export async function GET(
   { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path } = await params
-  const rel = normalize(path.join('/'))
-  // 防目录穿越
-  if (rel.startsWith('..') || rel.includes('..')) {
+  // 防目录穿越：严格限制在 UPLOAD_DIR 子路径内
+  const target = resolve(UPLOAD_ROOT, ...path)
+  if (!target.startsWith(UPLOAD_ROOT + sep)) {
     return new Response('Not found', { status: 404 })
   }
   try {
-    const data = await readFile(join(UPLOAD_DIR, rel))
-    const type = TYPES[extname(rel).toLowerCase()] || 'application/octet-stream'
+    const data = await readFile(target)
+    const type = TYPES[extname(target).toLowerCase()] || 'application/octet-stream'
     return new Response(new Uint8Array(data), {
       headers: {
         'Content-Type': type,

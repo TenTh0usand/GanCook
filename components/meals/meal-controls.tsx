@@ -32,6 +32,14 @@ export function MealControls({
       router.refresh()
     })
 
+  const remove = () => {
+    if (!confirm(t('controls.deleteConfirm'))) return
+    startTransition(async () => {
+      const res = await deleteMeal(meal.id)
+      if (res.ok) router.replace('/meals')
+    })
+  }
+
   return (
     <div className="space-y-2.5">
       {meal.status !== 'cancelled' && meal.status !== 'done' && (
@@ -86,10 +94,8 @@ export function MealControls({
       {canDelete && (
         <button
           className="flex w-full items-center justify-center gap-1.5 py-2 text-sm text-secondary"
-          onClick={() => {
-            if (confirm(t('controls.deleteConfirm')))
-              run(() => deleteMeal(meal.id).then(() => router.push('/meals')))
-          }}
+          disabled={pending}
+          onClick={remove}
         >
           <Trash2 className="h-4 w-4" />
           {t('controls.deleteMeal')}

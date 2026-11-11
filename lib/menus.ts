@@ -49,7 +49,7 @@ export type MenuDish = Dish & {
 }
 
 export type MenuSection = {
-  /** 分类 id；虚拟分组为 '__top' / '__seasonal' */
+  /** 分类 id；虚拟分组为 '__top' */
   id: string
   name: string
   badge: string | null
@@ -65,7 +65,15 @@ export type BuiltMenu = {
   fallbackAll: boolean
 }
 
+export type SeasonalItem = {
+  id: string
+  dish: MenuDish
+  title: string | null
+  posterPath: string | null
+}
+
 const OTHER = 'other'
+const EMPTY_COOK: CookStat = { total: 0, recent: 0, last: null }
 
 /** 每道菜的做过次数：已完成饭局里出现过（一顿只算 1 次）+ 手动「我做过」记录 */
 export function getCookStats(): Map<string, CookStat> {
@@ -103,18 +111,20 @@ export function listCategories(): DishCategory[] {
   return db.select().from(dishCategories).orderBy(asc(dishCategories.sort)).all()
 }
 
-/** 所有在售菜 + 统计，按做过次数从多到少（再按名字）排好 */
-export function getMenuDishes(): MenuDish[] {
-  const stats = getCookStats()
+function loadActiveMenuDishes(stats: Map<string, CookStat>): MenuDish[] {
   const newSince = dayjs().subtract(NEW_DAYS, 'day').unix()
-  const empty: CookStat = { total: 0, recent: 0, last: null }
   return db
     .select()
     .from(dishes)
     .where(eq(dishes.status, 'active'))
     .all()
-    .map((d) => ({ ...d, cook: stats.get(d.id) ?? empty, isNew: d.createdAt >= newSince }))
+    .map((d) => ({ ...d, cook: stats.get(d.id) ?? EMPTY_COOK, isNew: d.createdAt >= newSince }))
     .sort(byCooked)
+}
+
+/** 所有在售菜 + 统计，按做过次数从多到少（再按名字）排好 */
+export function getMenuDishes(): MenuDish[] {
+  return loadActiveMenuDishes(getCookStats())
 }
 
 function byCooked(a: MenuDish, b: MenuDish): number {
@@ -130,29 +140,38 @@ export function inHomeMenu(d: MenuDish): boolean {
  * 时令推荐：管理员指定的（在有效期内）优先；没有就取最近 3 个月做得最多的，
  * 再没有就取历史上做得最多的。
  */
-export function getSeasonal(all: MenuDish[]): { dishes: MenuDish[]; auto: boolean } {
+export function getSeasonal(all: MenuDish[]): { items: SeasonalItem[]; auto: boolean } {
   const tz = getSettings().timezone
   const today = todayLocal(tz)
   const byId = new Map(all.map((d) => [d.id, d]))
-  const featured = db
+  const featured: SeasonalItem[] = []
+  for (const f of db
     .select()
     .from(menuFeatures)
     .orderBy(asc(menuFeatures.sort), asc(menuFeatures.createdAt))
-    .all()
-    .filter((f) => (!f.startDate || f.startDate <= today) && (!f.endDate || f.endDate >= today))
-    .map((f) => byId.get(f.dishId))
-    .filter((d): d is MenuDish => !!d)
-  if (featured.length > 0) return { dishes: featured, auto: false }
+    .all()) {
+    if ((f.startDate && f.startDate > today) || (f.endDate && f.endDate < today)) continue
+    const dish = byId.get(f.dishId)
+    if (!dish) continue
+    featured.push({ id: f.id, dish, title: f.title, posterPath: f.posterPath })
+  }
+  if (featured.length > 0) return { items: featured, auto: false }
 
   const recentSince = dayjs(today).subtract(SEASONAL_DAYS, 'day').format('YYYY-MM-DD')
   const recent = all
     .filter((d) => d.cook.recent > 0 && d.cook.last && d.cook.last >= recentSince)
     .sort((a, b) => b.cook.recent - a.cook.recent || byCooked(a, b))
-  if (recent.length > 0) return { dishes: recent.slice(0, SEASONAL_LIMIT), auto: true }
-  return { dishes: all.filter((d) => d.cook.total > 0).slice(0, SEASONAL_LIMIT), auto: true }
+  const autoDishes =
+    recent.length > 0
+      ? recent.slice(0, SEASONAL_LIMIT)
+      : all.filter((d) => d.cook.total > 0).slice(0, SEASONAL_LIMIT)
+  return {
+    items: autoDishes.map((dish) => ({ id: dish.id, dish, title: null, posterPath: null })),
+    auto: true,
+  }
 }
 
-/** 组装一个菜单：顶部「本季推荐」「常做 TOP」+ 按大类分组（完整菜单再按细类分小标题） */
+/** 组装一个菜单：顶部「常做 TOP」+ 按大类分组（完整菜单再按细类分小标题） */
 export function buildMenu(menuId: MenuId, all: MenuDish[], categories: DishCategory[]): BuiltMenu {
   const def = MENUS.find((m) => m.id === menuId) ?? MENUS[0]
   let list = def.include === 'home' ? all.filter(inHomeMenu) : all
@@ -163,9 +182,6 @@ export function buildMenu(menuId: MenuId, all: MenuDish[], categories: DishCateg
   }
 
   const sections: MenuSection[] = []
-  const seasonal = getSeasonal(all).dishes.filter((d) => list.includes(d))
-  if (seasonal.length > 0)
-    sections.push({ id: '__seasonal', name: '', badge: null, dishes: seasonal })
   const top = list.filter((d) => d.cook.total > 0).slice(0, TOP_LIMIT)
   if (top.length > 0) sections.push({ id: '__top', name: '', badge: 'TOP', dishes: top })
 
@@ -193,17 +209,6 @@ export function buildMenu(menuId: MenuId, all: MenuDish[], categories: DishCateg
   return { id: def.id, sections, fallbackAll }
 }
 
-/** 某道菜的手动「我做过」记录（最近的在前） */
-export function getCookLogs(dishId: string) {
-  return db
-    .select()
-    .from(dishCookLogs)
-    .where(eq(dishCookLogs.dishId, dishId))
-    .orderBy(asc(dishCookLogs.date))
-    .all()
-    .reverse()
-}
-
 /** 一批菜的手动记录（菜品页批量用），dishId → 记录列表 */
 export function getCookLogsFor(dishIds: string[]) {
   const map = new Map<string, { id: string; date: string; userId: string | null }[]>()
@@ -226,7 +231,6 @@ export function getCookLogsFor(dishIds: string[]) {
   return map
 }
 
-
 /* ───────── 菜单浏览组件的数据（P2 第 2 步） ───────── */
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string
@@ -235,10 +239,15 @@ type TFn = (key: string, vars?: Record<string, string | number>) => string
  * 组装菜单浏览组件需要的全部数据：所有菜单的分组（只存菜 id）、菜品字典、时令海报。
  * 「本季推荐」由顶部海报展示，列表里不再重复出现。
  */
-export function getMenuBrowserData(t: TFn, opts: { includeArchived?: boolean } = {}): MenuBrowserData {
-  const categories = listCategories()
-  const all = getMenuDishes()
-  const catName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? null
+export function getMenuBrowserData(
+  t: TFn,
+  opts: { includeArchived?: boolean; categories?: DishCategory[] } = {},
+): MenuBrowserData {
+  const categories = opts.categories ?? listCategories()
+  const stats = getCookStats()
+  const all = loadActiveMenuDishes(stats)
+  const catMap = new Map(categories.map((c) => [c.id, c.name]))
+  const catName = (id: string | null) => (id ? catMap.get(id) ?? null : null)
   const dishMap: Record<string, BrowserDish> = {}
   const put = (d: Dish, cook: CookStat, isNew: boolean) => {
     dishMap[d.id] = {
@@ -253,16 +262,14 @@ export function getMenuBrowserData(t: TFn, opts: { includeArchived?: boolean } =
 
   const menus: BrowserMenu[] = MENUS.map((m) => {
     const built = buildMenu(m.id, all, categories)
-    const sections: BrowserSection[] = built.sections
-      .filter((s) => s.id !== '__seasonal')
-      .map((s) => ({
-        id: s.id,
-        name: s.id === '__top' ? t('menu.top') : s.name,
-        navName: s.id === '__top' ? t('menu.topShort') : undefined,
-        badge: s.badge ?? (s.dishes.some((d) => d.isNew) ? t('dish.new') : null),
-        dishIds: s.dishes.map((d) => d.id),
-        groups: s.groups?.map((g) => ({ id: g.id, name: g.name, dishIds: g.dishes.map((d) => d.id) })),
-      }))
+    const sections: BrowserSection[] = built.sections.map((s) => ({
+      id: s.id,
+      name: s.id === '__top' ? t('menu.top') : s.name,
+      navName: s.id === '__top' ? t('menu.topShort') : undefined,
+      badge: s.badge ?? (s.dishes.some((d) => d.isNew) ? t('dish.new') : null),
+      dishIds: s.dishes.map((d) => d.id),
+      groups: s.groups?.map((g) => ({ id: g.id, name: g.name, dishIds: g.dishes.map((d) => d.id) })),
+    }))
     return {
       id: m.id,
       label: t(m.labelKey),
@@ -274,10 +281,8 @@ export function getMenuBrowserData(t: TFn, opts: { includeArchived?: boolean } =
 
   // 已下架的菜：只在「完整菜单」末尾出现（管理用）
   if (opts.includeArchived) {
-    const stats = getCookStats()
-    const empty: CookStat = { total: 0, recent: 0, last: null }
     const archived = db.select().from(dishes).where(eq(dishes.status, 'archived')).all()
-    for (const d of archived) put(d, stats.get(d.id) ?? empty, false)
+    for (const d of archived) put(d, stats.get(d.id) ?? EMPTY_COOK, false)
     const full = menus.find((m) => m.id === 'full')
     if (full && archived.length > 0)
       full.sections.push({
@@ -290,13 +295,12 @@ export function getMenuBrowserData(t: TFn, opts: { includeArchived?: boolean } =
 
   // 时令海报：管理员指定的带标题 / 海报图；自动的用「本季推荐」+ 菜品照片
   const seasonal = getSeasonal(all)
-  const features = new Map(
-    db.select().from(menuFeatures).all().map((f) => [f.dishId, f]),
-  )
-  const posters: BrowserPoster[] = seasonal.dishes.map((d) => {
-    const f = seasonal.auto ? undefined : features.get(d.id)
-    return { dishId: d.id, title: f?.title || t('menu.seasonal'), posterPath: f?.posterPath ?? null }
-  })
+  const posters: BrowserPoster[] = seasonal.items.map((item) => ({
+    id: item.id,
+    dishId: item.dish.id,
+    title: item.title || t('menu.seasonal'),
+    posterPath: item.posterPath,
+  }))
 
   return { menus, dishes: dishMap, posters, postersAuto: seasonal.auto }
 }

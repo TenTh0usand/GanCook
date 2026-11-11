@@ -11,12 +11,14 @@ export function RunSchedule() {
   const router = useRouter()
   const t = useT()
   const [msg, setMsg] = useState('')
+  const [isErr, setIsErr] = useState(false)
   const [pending, startTransition] = useTransition()
 
   const run = () => {
     setMsg('')
     startTransition(async () => {
       const res = await runScheduleNow()
+      setIsErr(!res.ok)
       if (res.ok) {
         setMsg(
           t('admin.runResult', {
@@ -38,7 +40,7 @@ export function RunSchedule() {
         <RefreshCw className="h-4 w-4" />
         {t('admin.runNow')}
       </Button>
-      {msg && <span className="text-sm text-secondary">{msg}</span>}
+      {msg && <span className={isErr ? 'text-sm text-danger' : 'text-sm text-secondary'}>{msg}</span>}
     </div>
   )
 }

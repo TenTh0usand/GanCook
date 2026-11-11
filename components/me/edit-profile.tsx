@@ -77,6 +77,9 @@ export function EditProfile({
         setOpen(o)
         if (o) {
           setName(initName)
+          setBlob(null)
+          setPreview(avatarPath ? `/api/uploads/${avatarPath}` : null)
+          setCropSrc(null)
           setError('')
         }
       }}

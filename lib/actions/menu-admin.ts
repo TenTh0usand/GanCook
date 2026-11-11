@@ -5,8 +5,8 @@ import { asc, eq, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import { dishCategories, dishes, menuFeatures } from '@/lib/db/schema'
 import { getCurrentUser } from '@/lib/auth/user'
-import { saveImage, deleteImage, fileToBuffer } from '@/lib/images'
-import { getT } from '@/lib/i18n/server'
+import { saveImage, deleteImage, fileToBuffer, imageUploadError } from '@/lib/images'
+import { getT, type TFn } from '@/lib/i18n/server'
 
 /**
  * 菜单管理（GanCook-10k · P2 第 4 步）：分类管理 + 本季推荐管理。仅管理员。
@@ -89,9 +89,11 @@ export async function moveCategory(id: string, dir: -1 | 1): Promise<ActionResul
   // 重新编号后交换，避免 sort 值相同时交换无效
   const ordered = sibs.map((c) => c.id)
   ;[ordered[i], ordered[j]] = [ordered[j], ordered[i]]
-  ordered.forEach((cid, k) =>
-    db.update(dishCategories).set({ sort: k + 1 }).where(eq(dishCategories.id, cid)).run(),
-  )
+  db.transaction(() => {
+    ordered.forEach((cid, k) =>
+      db.update(dishCategories).set({ sort: k + 1 }).where(eq(dishCategories.id, cid)).run(),
+    )
+  })
   refresh()
   return { ok: true }
 }
@@ -104,13 +106,15 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
   if (id === OTHER) return { ok: false, error: t('err.cantDeleteOther') }
   const cur = db.select().from(dishCategories).where(eq(dishCategories.id, id)).get()
   if (!cur) return { ok: true }
-  if (cur.parentId) {
-    db.update(dishes).set({ subcategory: null }).where(eq(dishes.subcategory, id)).run()
-  } else {
-    db.update(dishes).set({ category: null, subcategory: null }).where(eq(dishes.category, id)).run()
-    db.delete(dishCategories).where(eq(dishCategories.parentId, id)).run()
-  }
-  db.delete(dishCategories).where(eq(dishCategories.id, id)).run()
+  db.transaction(() => {
+    if (cur.parentId) {
+      db.update(dishes).set({ subcategory: null }).where(eq(dishes.subcategory, id)).run()
+    } else {
+      db.update(dishes).set({ category: null, subcategory: null }).where(eq(dishes.category, id)).run()
+      db.delete(dishCategories).where(eq(dishCategories.parentId, id)).run()
+    }
+    db.delete(dishCategories).where(eq(dishCategories.id, id)).run()
+  })
   refresh()
   return { ok: true }
 }
@@ -128,13 +132,16 @@ function readFeature(form: FormData) {
   return { title, startDate: startDate || null, endDate: endDate || null }
 }
 
-async function readPoster(form: FormData): Promise<string | null | 'error'> {
+async function readPoster(
+  form: FormData,
+  t: TFn,
+): Promise<{ ok: true; path: string | null } | { ok: false; error: string }> {
   const file = form.get('poster')
-  if (!(file instanceof File) || file.size === 0) return null
+  if (!(file instanceof File) || file.size === 0) return { ok: true, path: null }
   try {
-    return await saveImage(await fileToBuffer(file), 'posters')
-  } catch {
-    return 'error'
+    return { ok: true, path: await saveImage(await fileToBuffer(file), 'posters') }
+  } catch (e) {
+    return { ok: false, error: imageUploadError(t, e) }
   }
 }
 
@@ -145,11 +152,11 @@ export async function createFeature(form: FormData): Promise<ActionResult> {
   const dishId = String(form.get('dishId') ?? '')
   const dish = db.select({ id: dishes.id }).from(dishes).where(eq(dishes.id, dishId)).get()
   if (!dish) return { ok: false, error: t('err.pickDish') }
-  const poster = await readPoster(form)
-  if (poster === 'error') return { ok: false, error: t('err.imageOnly') }
+  const poster = await readPoster(form, t)
+  if (!poster.ok) return poster
   const last = db.select().from(menuFeatures).orderBy(asc(menuFeatures.sort)).all().at(-1)
   db.insert(menuFeatures)
-    .values({ dishId, posterPath: poster, sort: (last?.sort ?? 0) + 1, ...readFeature(form) })
+    .values({ dishId, posterPath: poster.path, sort: (last?.sort ?? 0) + 1, ...readFeature(form) })
     .run()
   refresh()
   return { ok: true }
@@ -162,12 +169,16 @@ export async function updateFeature(id: string, form: FormData): Promise<ActionR
   const cur = db.select().from(menuFeatures).where(eq(menuFeatures.id, id)).get()
   if (!cur) return { ok: false, error: t('err.badInput') }
   const dishId = String(form.get('dishId') ?? '') || cur.dishId
+  if (dishId !== cur.dishId) {
+    const dish = db.select({ id: dishes.id }).from(dishes).where(eq(dishes.id, dishId)).get()
+    if (!dish) return { ok: false, error: t('err.pickDish') }
+  }
   let posterPath = cur.posterPath
-  const poster = await readPoster(form)
-  if (poster === 'error') return { ok: false, error: t('err.imageOnly') }
-  if (poster) {
+  const poster = await readPoster(form, t)
+  if (!poster.ok) return poster
+  if (poster.path) {
     await deleteImage(cur.posterPath)
-    posterPath = poster
+    posterPath = poster.path
   } else if (form.get('removePoster') === '1') {
     await deleteImage(cur.posterPath)
     posterPath = null
@@ -185,8 +196,8 @@ export async function deleteFeature(id: string): Promise<ActionResult> {
   if (!r.ok) return r
   const cur = db.select().from(menuFeatures).where(eq(menuFeatures.id, id)).get()
   if (!cur) return { ok: true }
-  await deleteImage(cur.posterPath)
   db.delete(menuFeatures).where(eq(menuFeatures.id, id)).run()
+  await deleteImage(cur.posterPath)
   refresh()
   return { ok: true }
 }
@@ -200,8 +211,11 @@ export async function moveFeature(id: string, dir: -1 | 1): Promise<ActionResult
   if (i < 0 || j < 0 || j >= all.length) return { ok: true }
   const ids = all.map((f) => f.id)
   ;[ids[i], ids[j]] = [ids[j], ids[i]]
-  ids.forEach((fid, k) => db.update(menuFeatures).set({ sort: k + 1 }).where(eq(menuFeatures.id, fid)).run())
+  db.transaction(() => {
+    ids.forEach((fid, k) =>
+      db.update(menuFeatures).set({ sort: k + 1 }).where(eq(menuFeatures.id, fid)).run(),
+    )
+  })
   refresh()
   return { ok: true }
 }
-

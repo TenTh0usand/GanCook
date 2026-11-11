@@ -75,27 +75,32 @@ export function ScoreInput({
   compact?: boolean
   label?: string
 }) {
-  const [text, setText] = React.useState(value != null ? fmtScore(value) : '')
-  // 外部值变化（点星星）时同步数字框
-  React.useEffect(() => {
-    setText(value != null ? fmtScore(value) : '')
-  }, [value])
+  const [draft, setDraft] = React.useState<string | null>(null)
+  const display = draft ?? (value != null ? fmtScore(value) : '')
 
   const commit = () => {
-    const v = parseScoreText(text)
+    if (draft == null) return
+    const v = parseScoreText(draft)
+    setDraft(null)
     if (v != null) onChange(v)
-    else setText(value != null ? fmtScore(value) : '')
   }
 
   return (
     <div className="flex items-center gap-2">
-      <HalfStars value={value} onChange={onChange} size={size} />
+      <HalfStars
+        value={value}
+        onChange={(v) => {
+          setDraft(null)
+          onChange(v)
+        }}
+        size={size}
+      />
       <input
-        value={text}
+        value={display}
         inputMode="decimal"
         aria-label={label}
         placeholder="–"
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
         className={cn(

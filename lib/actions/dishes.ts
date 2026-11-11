@@ -3,11 +3,11 @@
 import { revalidatePath } from 'next/cache'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
-import { dishes, dishCategories, dishCookLogs } from '@/lib/db/schema'
+import { dishes, dishCategories, dishCookLogs, menuFeatures } from '@/lib/db/schema'
 import { getCurrentUser } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
 import { todayLocal } from '@/lib/time'
-import { saveImage, deleteImage, fileToBuffer } from '@/lib/images'
+import { saveImage, deleteImage, fileToBuffer, imageUploadError } from '@/lib/images'
 import { getT, type TFn } from '@/lib/i18n/server'
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
@@ -40,12 +40,7 @@ function readMeta(form: FormData) {
 function revalidateMenus() {
   revalidatePath('/dishes')
   revalidatePath('/meals', 'layout')
-}
-
-function imageError(t: TFn, e: unknown): string {
-  return (e as Error).message === 'IMAGE_TOO_LARGE'
-    ? t('err.imageTooLarge')
-    : t('err.imageOnly')
+  revalidatePath('/admin')
 }
 
 function readName(form: FormData, t: TFn): string | { error: string } {
@@ -72,7 +67,7 @@ export async function createDish(form: FormData): Promise<ActionResult> {
     try {
       imagePath = await saveImage(await fileToBuffer(file), 'dishes')
     } catch (e) {
-      return { ok: false, error: imageError(t, e) }
+      return { ok: false, error: imageUploadError(t, e) }
     }
   }
 
@@ -110,7 +105,7 @@ export async function updateDish(
       await deleteImage(dish.imagePath)
       imagePath = newPath
     } catch (e) {
-      return { ok: false, error: imageError(t, e) }
+      return { ok: false, error: imageUploadError(t, e) }
     }
   }
 
@@ -130,8 +125,12 @@ export async function setDishStatus(
   const t = await getT()
   const me = await getCurrentUser()
   if (!me) return { ok: false, error: t('err.loginRequired') }
+  const dish = db.select().from(dishes).where(eq(dishes.id, id)).get()
+  if (!dish) return { ok: false, error: t('err.dishNotFound') }
+  if (dish.createdBy !== me.id && !me.isAdmin)
+    return { ok: false, error: t('err.onlyOwnerDishEdit') }
   db.update(dishes).set({ status }).where(eq(dishes.id, id)).run()
-  revalidatePath('/dishes')
+  revalidateMenus()
   return { ok: true }
 }
 
@@ -143,9 +142,20 @@ export async function deleteDish(id: string): Promise<ActionResult> {
   if (!dish) return { ok: true }
   if (dish.createdBy !== me.id && !me.isAdmin)
     return { ok: false, error: t('err.onlyOwnerDishDel') }
-  await deleteImage(dish.imagePath)
+
+  // 级联删除 menu_features 前先收集关联海报图，避免落盘图片孤立
+  const posters = db
+    .select({ posterPath: menuFeatures.posterPath })
+    .from(menuFeatures)
+    .where(eq(menuFeatures.dishId, id))
+    .all()
+    .map((f) => f.posterPath)
+
   db.delete(dishes).where(eq(dishes.id, id)).run()
-  revalidatePath('/dishes')
+  await deleteImage(dish.imagePath)
+  for (const p of posters) await deleteImage(p)
+
+  revalidateMenus()
   return { ok: true }
 }
 

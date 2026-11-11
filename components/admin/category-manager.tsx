@@ -112,14 +112,15 @@ export function CategoryManager({
       {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
       {/* 新增大类 */}
-      <NameDialog
-        open={adding}
-        onOpenChange={setAdding}
-        title={t('catmgr.addMain')}
-        placeholder={t('catmgr.namePh')}
-        pending={pending}
-        onSubmit={(name) => run(() => createCategory({ name, parentId: null }), () => setAdding(false))}
-      />
+      {adding && (
+        <NameDialog
+          title={t('catmgr.addMain')}
+          placeholder={t('catmgr.namePh')}
+          pending={pending}
+          onClose={() => setAdding(false)}
+          onSubmit={(name) => run(() => createCategory({ name, parentId: null }), () => setAdding(false))}
+        />
+      )}
 
       {/* 编辑大类（含细类管理） */}
       {current && (
@@ -322,27 +323,22 @@ function IconBtn({
 }
 
 function NameDialog({
-  open,
-  onOpenChange,
   title,
   placeholder,
   pending,
+  onClose,
   onSubmit,
 }: {
-  open: boolean
-  onOpenChange: (o: boolean) => void
   title: string
   placeholder: string
   pending: boolean
+  onClose: () => void
   onSubmit: (name: string) => void
 }) {
   const t = useT()
   const [name, setName] = React.useState('')
-  React.useEffect(() => {
-    if (open) setName('')
-  }, [open])
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent title={title}>
         <div className="space-y-4">
           <Input value={name} maxLength={10} placeholder={placeholder} onChange={(e) => setName(e.target.value)} />

@@ -1,6 +1,6 @@
 import 'server-only'
 import { mkdir, writeFile, unlink } from 'node:fs/promises'
-import { join, normalize } from 'node:path'
+import { join, resolve, sep } from 'node:path'
 import sharp from 'sharp'
 import { UPLOAD_DIR } from '@/lib/env'
 
@@ -10,12 +10,19 @@ import { UPLOAD_DIR } from '@/lib/env'
  * DB 只保存返回的相对路径，如 "dishes/xxxx.webp"。
  */
 const MAX_SIDE = 1280
+const UPLOAD_ROOT = resolve(UPLOAD_DIR)
+
+/** 将相对路径解析到 UPLOAD_DIR 内，越界返回 null */
+export function resolveUploadPath(relPath: string): string | null {
+  const target = resolve(UPLOAD_ROOT, relPath)
+  return target.startsWith(UPLOAD_ROOT + sep) ? target : null
+}
 
 export async function saveImage(
   buffer: Buffer,
   subdir: 'dishes' | 'avatars' | 'posters' | 'prep',
 ): Promise<string> {
-  const dir = join(UPLOAD_DIR, subdir)
+  const dir = join(UPLOAD_ROOT, subdir)
   await mkdir(dir, { recursive: true })
   const filename = `${crypto.randomUUID()}.webp`
   const out = await sharp(buffer)
@@ -30,11 +37,10 @@ export async function saveImage(
 /** 删除一张已存图片（容错：文件不存在不报错） */
 export async function deleteImage(relPath: string | null | undefined) {
   if (!relPath) return
-  // 防目录穿越
-  const safe = normalize(relPath).replace(/^(\.\.(\/|\\|$))+/, '')
-  if (safe.startsWith('..')) return
+  const target = resolveUploadPath(relPath)
+  if (!target) return
   try {
-    await unlink(join(UPLOAD_DIR, safe))
+    await unlink(target)
   } catch {
     // 忽略
   }
@@ -49,4 +55,14 @@ export async function fileToBuffer(
   if (!file.type.startsWith('image/')) throw new Error('IMAGE_ONLY')
   if (file.size > maxBytes) throw new Error('IMAGE_TOO_LARGE')
   return Buffer.from(await file.arrayBuffer())
+}
+
+/** 将图片校验/处理异常翻译为用户可读提示 */
+export function imageUploadError(
+  t: (key: string) => string,
+  err: unknown,
+): string {
+  return (err as Error | undefined)?.message === 'IMAGE_TOO_LARGE'
+    ? t('err.imageTooLarge')
+    : t('err.imageOnly')
 }

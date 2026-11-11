@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Clock, Users, ChefHat, ChevronRight, Star } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { TIMEZONE } from '@/lib/env'
 import { MEAL_EMOJI, fmtTime, fmtDateLabel } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
 import { cn } from '@/lib/utils'
@@ -28,7 +29,7 @@ export async function MealCard({
   meal,
   cookName,
   participants,
-  tz,
+  tz = TIMEZONE,
   score,
 }: {
   meal: Meal
@@ -65,7 +66,7 @@ export async function MealCard({
         <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-secondary">
           <span className="inline-flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" />
-            {fmtDateLabel(meal.date, tz!, t)} {fmtTime(meal.diningTime, tz)}
+            {fmtDateLabel(meal.date, tz, t)} {fmtTime(meal.diningTime, tz)}
           </span>
           {typeof participants === 'number' && participants > 0 && (
             <span className="inline-flex items-center gap-1">

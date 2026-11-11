@@ -12,14 +12,6 @@ dayjs.locale('zh-cn')
 
 export { dayjs }
 
-export const MEAL_LABELS: Record<string, string> = {
-  breakfast: '早餐',
-  lunch: '午餐',
-  dinner: '晚餐',
-  snack: '加餐',
-  late: '夜宵',
-}
-
 // 餐次 emoji 统一定义在 lib/roles.ts（客户端组件也要用）
 export { MEAL_EMOJI } from '@/lib/roles'
 
@@ -45,10 +37,6 @@ export function todayLocal(tz: string = TIMEZONE): string {
 /** 格式化用餐时间用于展示 */
 export function fmtTime(sec: number, tz: string = TIMEZONE): string {
   return dayjs.unix(sec).tz(tz).format('HH:mm')
-}
-
-export function fmtDate(sec: number, tz: string = TIMEZONE): string {
-  return dayjs.unix(sec).tz(tz).format('M月D日')
 }
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string

@@ -19,13 +19,20 @@ export const PosterCard = React.forwardRef<
     cookedLabel: string
     picked?: boolean
   }
->(({ dish, title, posterPath, cookedLabel, picked, className, ...props }, ref) => {
+>(({ dish, title, posterPath, cookedLabel, picked, className, onKeyDown, ...props }, ref) => {
   const img = posterPath ?? dish.imagePath
   return (
     <div
       ref={ref}
       role="button"
       tabIndex={0}
+      onKeyDown={(e) => {
+        onKeyDown?.(e)
+        if (!e.defaultPrevented && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          e.currentTarget.click()
+        }
+      }}
       className={cn(
         'mf-pressable relative h-[128px] w-[76%] shrink-0 snap-start overflow-hidden rounded-[22px]',
         !img && 'mf-tonal',

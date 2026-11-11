@@ -2,12 +2,14 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
-import { mealSchedules, users } from '@/lib/db/schema'
+import { mealRoles, mealSchedules, users } from '@/lib/db/schema'
 import { getCurrentUser } from '@/lib/auth/user'
 import { setSetting } from '@/lib/settings'
 import { getT } from '@/lib/i18n/server'
+import { deleteImage } from '@/lib/images'
+import { syncMealCooks } from '@/lib/duties'
 import { MEAL_TYPES } from '@/lib/roles'
 import type { User } from '@/lib/db/schema'
 
@@ -35,11 +37,15 @@ export async function updateFamilySettings(input: {
   const familyName = input.familyName.trim().slice(0, 20)
   if (!familyName) return { ok: false, error: t('err.familyNameEmpty') }
 
-  setSetting('familyName', familyName)
-  setSetting('registrationOpen', input.registrationOpen ? '1' : '0')
-  setSetting('joinCode', input.joinCode.trim())
+  db.transaction(() => {
+    setSetting('familyName', familyName)
+    setSetting('registrationOpen', input.registrationOpen ? '1' : '0')
+    setSetting('joinCode', input.joinCode.trim())
+  })
   revalidatePath('/admin')
   revalidatePath('/login')
+  revalidatePath('/home')
+  revalidatePath('/me')
   return { ok: true }
 }
 
@@ -133,6 +139,8 @@ export async function runScheduleNow(): Promise<
   const res = tick()
   revalidatePath('/meals')
   revalidatePath('/home')
+  revalidatePath('/dishes')
+  revalidatePath('/stats')
   return { ok: true, ...res }
 }
 
@@ -141,7 +149,28 @@ export async function removeMember(userId: string): Promise<ActionResult> {
   const r = await requireAdminUser()
   if (!r.ok) return r
   if (userId === r.me.id) return { ok: false, error: t('err.cantRemoveSelf') }
-  db.delete(users).where(eq(users.id, userId)).run()
+
+  const target = db.select().from(users).where(eq(users.id, userId)).get()
+  if (!target) return { ok: true }
+
+  db.transaction(() => {
+    const cookSlots = db
+      .selectDistinct({ date: mealRoles.date, slot: mealRoles.slot })
+      .from(mealRoles)
+      .where(and(eq(mealRoles.userId, userId), eq(mealRoles.kind, 'cook')))
+      .all()
+    db.delete(users).where(eq(users.id, userId)).run()
+    for (const s of cookSlots) syncMealCooks(s.date, s.slot)
+  })
+  await deleteImage(target.avatarPath)
+
   revalidatePath('/admin')
+  revalidatePath('/login')
+  revalidatePath('/home')
+  revalidatePath('/meals', 'layout')
+  revalidatePath('/stats')
+  revalidatePath('/prep')
+  revalidatePath('/dishes')
+  revalidatePath('/me')
   return { ok: true }
 }

@@ -15,8 +15,9 @@ import { DateSwitcher } from '@/components/prep/date-switcher'
 export const dynamic = 'force-dynamic'
 
 const yuan = (cents: number) => {
-  const v = cents / 100
-  return v % 1 === 0 ? String(v) : v.toFixed(1)
+  if (cents % 100 === 0) return String(cents / 100)
+  if (cents % 10 === 0) return (cents / 100).toFixed(1)
+  return (cents / 100).toFixed(2)
 }
 
 /**

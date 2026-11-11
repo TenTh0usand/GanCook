@@ -49,6 +49,7 @@ export function ReviewSection({
   )
   const [comment, setComment] = useState(mine?.comment ?? '')
   const [msg, setMsg] = useState('')
+  const [isErr, setIsErr] = useState(false)
   const [pending, startTransition] = useTransition()
 
   const autoOverall = overallFromDims(dims)
@@ -63,7 +64,10 @@ export function ReviewSection({
   const submit = () => {
     setMsg('')
     const score = mode === 'simple' ? simple : sciOverall
-    if (score == null) return setMsg(t('review.needStar'))
+    if (score == null) {
+      setIsErr(true)
+      return setMsg(t('review.needStar'))
+    }
     startTransition(async () => {
       const res = await submitReview(mealId, {
         mode,
@@ -71,6 +75,7 @@ export function ReviewSection({
         dims: mode === 'sci' ? dims : undefined,
         comment,
       })
+      setIsErr(!res.ok)
       if (res.ok) {
         setMsg(t('review.submitted'))
         router.refresh()
@@ -160,7 +165,7 @@ export function ReviewSection({
           <Button size="sm" loading={pending} onClick={submit}>
             {mine ? t('review.update') : t('review.submit')}
           </Button>
-          {msg && <span className="text-sm text-accent">{msg}</span>}
+          {msg && <span className={isErr ? 'text-sm text-danger' : 'text-sm text-accent'}>{msg}</span>}
         </div>
       </div>
 
