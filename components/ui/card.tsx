@@ -18,24 +18,3 @@ export function Card({
     />
   )
 }
-
-export function CardTitle({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLHeadingElement>) {
-  return (
-    <h3
-      className={cn('relative text-base font-semibold text-ink', className)}
-      {...props}
-    />
-  )
-}
-
-export function CardDescription({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLParagraphElement>) {
-  return (
-    <p className={cn('relative text-sm text-secondary', className)} {...props} />
-  )
-}

@@ -72,9 +72,10 @@ export function roleTint(kind: ContribKind, alpha = 0.16): string {
   return `rgb(var(${ROLE_META[kind].soft}) / ${alpha})`
 }
 
-/** 默认时段（按家庭时区的当前时刻）：10 点前早餐 / 14:30 前午餐 / 17 点前加餐 / 21 点前晚餐 / 之后夜宵 */
+/** 默认时段（按家庭时区的当前时刻）：凌晨 2 点前夜宵 / 10 点前早餐 / 14:30 前午餐 / 17 点前加餐 / 21 点前晚餐 / 之后夜宵 */
 export function guessMealType(hour: number, minute: number): MealType {
   const m = hour * 60 + minute
+  if (m < 2 * 60) return 'late'
   if (m < 10 * 60) return 'breakfast'
   if (m < 14 * 60 + 30) return 'lunch'
   if (m < 17 * 60) return 'snack'

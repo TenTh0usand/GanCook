@@ -16,6 +16,24 @@ export type ActionResult = { ok: true } | { ok: false; error: string }
 
 const isPin = (v: string) => /^\d{6}$/.test(v)
 
+/** 6 位 PIN 轻量内存限流：同一账号连续输错 20 次冷却 5 分钟 */
+const LOGIN_MAX_FAILURES = 20
+const LOGIN_LOCK_MS = 5 * 60 * 1000
+const LOGIN_STALE_MS = 60 * 60 * 1000
+
+type LoginAttempt = { count: number; lockedUntil: number; lastAt: number }
+
+const gAuth = globalThis as unknown as {
+  __gancookLoginAttempts?: Map<string, LoginAttempt>
+}
+
+function getAttemptMap(): Map<string, LoginAttempt> {
+  if (!gAuth.__gancookLoginAttempts) {
+    gAuth.__gancookLoginAttempts = new Map()
+  }
+  return gAuth.__gancookLoginAttempts
+}
+
 /** 首启：创建管理员 + 家庭名 + 默认规则 */
 export async function setupAdmin(input: {
   familyName: string
@@ -90,11 +108,47 @@ export async function login(input: {
   const t = await getT()
   if (isSetupNeeded()) redirect('/setup')
 
-  const user = getUserByName(input.name.trim())
-  if (!user) return { ok: false, error: t('err.badCredentials') }
-  const valid = await verifyPassword(input.pin, user.passwordHash)
-  if (!valid) return { ok: false, error: t('err.badCredentials') }
+  const trimmedName = input.name.trim()
+  if (!trimmedName) return { ok: false, error: t('err.nameRequired') }
 
+  const key = trimmedName.toLowerCase()
+  const now = Date.now()
+  const attempts = getAttemptMap()
+  if (attempts.size > 500) {
+    for (const [k, v] of attempts) {
+      if (now - v.lastAt > LOGIN_STALE_MS && v.lockedUntil <= now) {
+        attempts.delete(k)
+      }
+    }
+  }
+
+  const prev = attempts.get(key)
+  if (prev && prev.lockedUntil > now) {
+    const mins = Math.max(1, Math.ceil((prev.lockedUntil - now) / 60000))
+    return { ok: false, error: t('err.loginLocked', { m: mins }) }
+  }
+  if (prev && prev.lockedUntil > 0 && prev.lockedUntil <= now) {
+    attempts.delete(key)
+  }
+
+  const user = getUserByName(trimmedName)
+  const valid = user ? await verifyPassword(input.pin, user.passwordHash) : false
+  if (!user || !valid) {
+    const cur = attempts.get(key)
+    const nextCount = (cur ? cur.count : 0) + 1
+    if (nextCount >= LOGIN_MAX_FAILURES) {
+      attempts.set(key, {
+        count: nextCount,
+        lockedUntil: now + LOGIN_LOCK_MS,
+        lastAt: now,
+      })
+      return { ok: false, error: t('err.loginLocked', { m: 5 }) }
+    }
+    attempts.set(key, { count: nextCount, lockedUntil: 0, lastAt: now })
+    return { ok: false, error: t('err.badCredentials') }
+  }
+
+  attempts.delete(key)
   await createSession({
     userId: user.id,
     name: user.name,

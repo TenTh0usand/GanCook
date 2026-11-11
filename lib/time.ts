@@ -15,23 +15,32 @@ export { dayjs }
 // 餐次 emoji 统一定义在 lib/roles.ts（客户端组件也要用）
 export { MEAL_EMOJI } from '@/lib/roles'
 
+/** 跨午夜分界点：凌晨 02:00 之前仍归入前一天（方便跨午夜夜宵） */
+export const DAY_ROLLOVER_HOUR = 2
+
 /** 当前 unix 秒 */
 export function nowSec(): number {
   return Math.floor(Date.now() / 1000)
 }
 
-/** 把家庭时区下的「某天 + HH:MM」转成 unix 秒 */
+/**
+ * 把家庭时区下的「某天 + HH:MM」转成 unix 秒。
+ * 凌晨 00:00–01:59 视为该营业日的次日凌晨（例如 11 月 11 日的夜宵 00:30 → 11 月 12 日 00:30），
+ * 这样截止时间 23:30 自然早于用餐时间 00:30。
+ */
 export function localDateTimeToSec(
   date: string,
   hhmm: string,
   tz: string = TIMEZONE,
 ): number {
-  return dayjs.tz(`${date} ${hhmm}`, 'YYYY-MM-DD HH:mm', tz).unix()
+  const hour = Number(hhmm.slice(0, 2))
+  const base = dayjs.tz(`${date} ${hhmm}`, 'YYYY-MM-DD HH:mm', tz)
+  return (hour < DAY_ROLLOVER_HOUR ? base.add(1, 'day') : base).unix()
 }
 
-/** 家庭时区下的今天 YYYY-MM-DD */
+/** 家庭时区下的今天 YYYY-MM-DD（凌晨 02:00 前仍算前一天） */
 export function todayLocal(tz: string = TIMEZONE): string {
-  return dayjs().tz(tz).format('YYYY-MM-DD')
+  return dayjs().tz(tz).subtract(DAY_ROLLOVER_HOUR, 'hour').format('YYYY-MM-DD')
 }
 
 /** 格式化用餐时间用于展示 */
@@ -44,8 +53,8 @@ type TFn = (key: string, vars?: Record<string, string | number>) => string
 /** 友好日期标签（今天/明天/昨天/M月D日），需传入翻译函数 t */
 export function fmtDateLabel(date: string, tz: string, t: TFn): string {
   const d = dayjs.tz(date, 'YYYY-MM-DD', tz)
-  const today = dayjs().tz(tz).startOf('day')
-  const diff = d.startOf('day').diff(today, 'day')
+  const today = dayjs.tz(todayLocal(tz), 'YYYY-MM-DD', tz)
+  const diff = d.startOf('day').diff(today.startOf('day'), 'day')
   if (diff === 0) return t('date.today')
   if (diff === 1) return t('date.tomorrow')
   if (diff === -1) return t('date.yesterday')

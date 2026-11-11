@@ -1,74 +1,55 @@
 <div align="center">
 
-<img src="public/logo.webp" width="96" height="96" alt="GanCook" />
+<img src="public/logo.webp" width="96" height="96" alt="GanCook-10k" />
 
-# 🍳 GanCook
+# 🍳 GanCook-10k
 
-**A self-hostable family meal-ordering app for your NAS — take turns cooking, order dishes, rate each meal.**
+**A self-hosted family meal-ordering, grocery prep & kitchen chore system for your NAS.**
 
-[![Docker](https://img.shields.io/badge/Docker-one--command-2496ED?logo=docker&logoColor=white)](#-quick-start)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-single--file-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Telegram](https://img.shields.io/badge/Telegram-Chat-26A5E4?logo=telegram&logoColor=white)](https://t.me/GanCookProj)
 
 [中文](README.md) · English
-
-💬 Questions / feedback / ideas → Telegram group [@GanCookProj](https://t.me/GanCookProj)
 
 </div>
 
 ---
 
-"Who's cooking today?" "What's for lunch?" — GanCook turns those daily questions into something cozy.
-It auto-opens tomorrow's meal the night before, lets everyone order, lets whoever cooks claim the meal,
-and shows a **GitHub-style contribution wall** of who's been cooking. Built for families, **no cloud required** —
-all data lives on your own NAS.
+**GanCook-10k** is a custom, self-maintained family kitchen web app built for local NAS deployment. Every piece of data (SQLite database and uploaded WebP photos) stays on your own NAS with zero cloud dependencies.
 
-## ✨ Features
+## ✨ Highlights
 
-- 🚀 **Truly zero-config** — one `docker run`, no env vars to set; secrets are auto-generated & persisted on first boot.
-- 🗄️ **Single container + SQLite** — no external DB, no cloud. Backup = copy one `data` folder.
-- 👨‍👩‍👧 **One account, many roles** — no role at signup; anyone can cook or order. The cook is claimed **per meal**.
-- 👆 **Tap-to-login** — on a shared device, pick your avatar and enter a 6-digit code; no typing.
-- ⏰ **Auto meals (like alarms)** — add as many rules as you like: meal, time, how early to open, how early to close, and which weekdays. Auto-opens, auto-advances, auto-completes.
-- 🌱 **Contribution wall** — GitHub-style heatmaps for cooking & ordering.
-- 🖼️ **Fast images** — dish photos are compressed to WebP and stored on disk (no base64-in-DB).
-- 🥛 **"Milk Fabric" UI** — soft neumorphism, mobile-first, installable as a PWA.
-- 🌍 **Bilingual** — switch between English and 中文 on the login page or in Me · Settings.
-- 🔄 **Painless upgrades** — pull the new image; the DB migrates itself and sessions persist.
+- 🍽️ **Dual Menus & Seasonal Posters** — Switch between the **Everyday Menu** (manual picks + dishes cooked 2+ times in the last 3 months) and the **Full Menu** (2-level category sidebar, search, and featured seasonal posters).
+- 🌙 **5 Meal Slots & Late-Night Rollover** — Breakfast, Lunch, Snack, Dinner, and Late Night, with a `02:00 AM` day rollover so post-midnight snacks stay attached to tonight.
+- 🥕 **Grocery & Prep Ledger** — Log bought ingredients, fridge items, prep notes, and receipt photos with automatic daily/weekly spend totals.
+- 👨‍👩‍👧 **4-Role Kitchen Contributions** — Track Prep, Cooking (multi-cook supported), Ordering, and Cleanup on a filterable heatmap.
+- ⭐ **Quick & 6-Axis Radar Ratings** — Rate meals in `0.5`-star steps or across 6 dimensions (Taste, Texture, Looks, Portion, Value, Experience).
+- ⏰ **Auto-Scheduled Meals** — Recurring rules open ordering ahead of time, close at the deadline, and mark meals done automatically.
+- 🥛 **Milk Fabric UI & Bilingual** — Mobile-first PWA with one-tap 中文 / English switching.
 
-## 🚀 Quick start
-
-Image: `gloridust/gancook:latest` (Docker Hub) or `ghcr.io/gloridust/gancook:latest` (GHCR).
+## 🚀 Quick Start (Docker Compose)
 
 ```bash
-docker run -d --name gancook \
-  -p 3000:3000 \
-  -v ./data:/data \
-  --restart unless-stopped \
-  gloridust/gancook:latest
+git clone https://github.com/TenTh0usand/GanCook.git
+cd GanCook
+docker compose up -d --build
 ```
 
-Open `http://<your-nas>:3000` — the first person to register becomes the admin. That's it.
+Open `http://<your-nas>:3000` — the first account created becomes the family admin.
 
-Or with compose:
+## 🛠️ Local Development
 
 ```bash
-curl -O https://raw.githubusercontent.com/Gloridust/GanCook/main/docker-compose.yml
-docker compose up -d
+npm ci
+cp .env.example .env.local
+npm run db:migrate
+npm run dev
 ```
 
-## 🔄 Upgrade
+## 💾 Backups
 
-```bash
-docker compose pull && docker compose up -d
-```
-
-Data and secrets live in the `data` volume; the database migrates automatically and you stay logged in.
-
-## 🧱 Stack
-
-Next.js 16 (App Router, Server Actions) · React 19 · TypeScript · SQLite + Drizzle ORM · sharp · node-cron · TailwindCSS v4.
+All state lives inside the `data/` directory (`app.db` + `uploads/`). Back up that folder to preserve everything.
 
 ## 📄 License
 

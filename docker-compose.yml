@@ -1,10 +1,10 @@
 services:
   gancook:
-    # 默认用 Docker Hub 镜像（国内飞牛等 NAS 有加速）。升级只需 docker compose pull && up -d
-    image: gloridust/gancook:latest
-    # 海外/或偏好 GHCR：ghcr.io/gloridust/gancook:latest
-    # 本地自行构建：注释 image 一行，取消下一行注释
-    # build: .
+    build:
+      context: .
+      args:
+        APP_VERSION: ${APP_VERSION:-0.5.0}
+    image: gancook-custom:latest
     container_name: gancook
     restart: unless-stopped
     ports:
@@ -12,10 +12,6 @@ services:
     volumes:
       # 数据目录（SQLite + 上传图片）。备份只需复制 ./data
       - ./data:/data
-      # Docker 套接字：启用「家庭管理 → 关于与更新」的网页端一键更新（默认开启）。
-      # 容器内会让非 root 的 app 用户加入套接字所属组来访问；权限/路径不符时会自动
-      # 降级为「显示手动更新命令」。若你的环境没有 Docker 守护进程或不想要此功能，删掉这行即可。
-      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       # 全部可选。开箱即用，无需配置任何密钥（首次启动自动生成并持久化到 ./data）。
       TZ: Asia/Shanghai

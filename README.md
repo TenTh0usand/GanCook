@@ -2,183 +2,83 @@
 
 <img src="public/logo.webp" width="96" height="96" alt="干饭厨子" />
 
-# 🍳 干饭厨子 · GanCook
+# 🍳 干饭厨子 · GanCook-10k
 
-**可一键部署到 NAS 的家庭点菜系统 —— 让一家人轮流做饭、点菜、互相打分。**
+**自部署到家庭 NAS 的点菜、备菜与厨房分工系统 —— 让一家人点菜、买菜、下厨、打分有迹可循。**
 
-[![Docker](https://img.shields.io/badge/Docker-一键部署-2496ED?logo=docker&logoColor=white)](#-快速开始)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-单文件-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![Telegram](https://img.shields.io/badge/Telegram-讨论组-26A5E4?logo=telegram&logoColor=white)](https://t.me/GanCookProj)
 
 中文 · [English](README.en.md)
-
-💬 交流 / 反馈 / 许愿 → Telegram 讨论组 [@GanCookProj](https://t.me/GanCookProj)
 
 </div>
 
 ---
 
-> 「今天谁做饭？」「吃啥？」——干饭厨子把这两个每天都要吵一遍的问题，变成一件温馨小事。
->
-> 前一天晚上自动开好明天的饭局，家人各自点菜，谁掌勺谁认领，吃完打个分；
-> 月底还能在**贡献墙**上看看这个月是谁在默默下厨。专为家庭设计，**不依赖任何云服务**，数据全在你自己的 NAS 上。
+> **GanCook-10k** 是面向自家日常使用持续二次开发的定制版本，所有数据（SQLite 数据库与菜品/备菜照片）完全保存在本地 NAS 上，不依赖任何云服务。
 
-## ✨ 特性
+## ✨ 核心特性
 
-- 🚀 **真·开箱即用** —— 一条 `docker run` 跑起来，**无需配置任何环境变量**，密钥首启自动生成并持久化。
-- 🗄️ **单容器 + SQLite** —— 没有外部数据库、没有云依赖，备份只需复制一个 `data` 目录。
-- 👨‍👩‍👧 **一账号多角色** —— 注册不分身份，人人都能做饭、点菜；做饭人按「每一餐」认领（「我来做这顿」）。
-- 👆 **选头像登录** —— 共享设备上无需打字，点自己的头像再输 6 位密码即可（像选用户头像）。
-- ⏰ **自动饭局（像设闹钟）** —— 在后台**自由增删多条规则**：餐次、时间、提前多久开、提前多久截止、生效星期都可自定义。到点自动开局、截止自动进入做饭、用餐后自动完成。
-- 🌱 **贡献墙** —— GitHub 风格热力图，谁做饭最勤、谁最会点菜，绿格子一目了然。
-- 🖼️ **图片不拖后腿** —— 头像/菜品上传自动裁剪压缩（≤2MB）转 WebP 落盘（告别 base64 进库），加载飞快。
-- 🥛 **牛奶布艺 UI** —— 柔和拟物 + 青菜绿，移动端优先，可作为 PWA 添加到主屏。
-- 🌍 **中英双语** —— 登录页与「我的 · 设置」一键切换。
-- 🔄 **升级无痛** —— 拉新镜像即可，数据库自动迁移，登录态不丢；管理员还能在网页端**一键更新**（需挂载 Docker 套接字，否则降级为手动指引）。
+- 🍽️ **双菜单点菜体验** —— 支持「家常菜单」（手动精选 + 近 3 个月常做菜品自动入选）与「完整菜单」（二级分类导航 + 搜索 + 常做排序），顶部支持**本季推荐海报**。
+- 🌙 **五餐次 + 跨午夜夜宵** —— 覆盖早餐、午餐、加餐、晚餐、夜宵；凌晨 `02:00` 前仍自然归属前一天营业日，跨零点开夜宵不会错乱。
+- 🥕 **备菜与买菜账本** —— 按天/餐次记录买的食材、冰箱存货、处理方式与小票照片，自动汇总当日与本周买菜花费，并联动打卡「备菜」。
+- 👨‍👩‍👧 **四角色家务分工与热力图** —— 备菜、做菜（支持多人掌勺）、点菜、善后四色分工打卡，统计页支持按角色筛选热力图。
+- ⭐ **双模式餐后打分** —— 支持 `0.5` 步进半星简易打分，或味道、口感、卖相、份量、性价比、体验六维科学雷达图评分。
+- ⏰ **自动饭局调度** —— 按星期与时间自动开局、到点截止进入做饭、餐后自动归档完成。
+- 👆 **选头像 + 6 位密码登录** —— 共享设备免打字点选头像登录，内置连续输错限流保护。
+- 🥛 **牛奶布艺 UI + 中英双语** —— 柔和拟物视觉，支持 PWA 安装到手机主屏与一键切换中英文。
 
-## 📸 预览
-
-<table>
-  <tr>
-    <td align="center" width="33%">
-      <img src="doc/img/login.webp" alt="选头像登录" /><br/>
-      <b>👆 选头像登录</b><br/><sub>共享设备免打字，点头像 + 6 位密码</sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="doc/img/home.webp" alt="临近的饭局" /><br/>
-      <b>🏠 临近的饭局</b><br/><sub>这几天吃什么、谁掌勺，一目了然</sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="doc/img/meal.webp" alt="点菜 + 认领做饭" /><br/>
-      <b>🍽️ 点菜 · 认领做饭</b><br/><sub>勾选想吃的，「我来做这顿」</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="33%">
-      <img src="doc/img/review.webp" alt="谁点了什么 + 餐后打分" /><br/>
-      <b>⭐ 大家点了什么 · 打分</b><br/><sub>谁点了什么，吃完互相评价</sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="doc/img/wall.webp" alt="贡献墙" /><br/>
-      <b>🌱 贡献墙</b><br/><sub>谁在为这个家默默下厨，绿格子见证</sub>
-    </td>
-    <td align="center" width="33%">
-      <img src="doc/img/admin.webp" alt="自动饭局规则" /><br/>
-      <b>⏰ 自动饭局（像设闹钟）</b><br/><sub>到点自动开局、截止、流转</sub>
-    </td>
-  </tr>
-</table>
-
-> 一条线把这些串起来：**前一晚自动开好明天的饭局 → 家人各自点菜 → 谁做饭点一下「我来做这顿」 → 吃完打个分 → 月底贡献墙上看看谁最辛苦**。
-
-## 🚀 快速开始
-
-镜像地址（任选其一）：
-
-- 🐳 **Docker Hub（国内飞牛等 NAS 有加速，推荐）**：`gloridust/gancook:latest`
-- 📦 GHCR（海外）：`ghcr.io/gloridust/gancook:latest`
-
-### 方式一：docker run（最简单）
+## 🚀 部署运行（Docker Compose）
 
 ```bash
-docker run -d --name gancook \
-  -p 3000:3000 \
-  -v ./data:/data \
-  --restart unless-stopped \
-  gloridust/gancook:latest
+git clone https://github.com/TenTh0usand/GanCook.git
+cd GanCook
+docker compose up -d --build
 ```
 
-打开 `http://<你的NAS地址>:3000`，第一个注册的人即成为管理员。完事。
+打开 `http://<你的NAS地址>:3000`，首次访问按引导建立家庭并设置 6 位管理员密码即可。
 
-### 方式二：docker compose（推荐，便于升级）
-
-```bash
-curl -O https://raw.githubusercontent.com/Gloridust/GanCook/main/docker-compose.yml
-docker compose up -d
-```
-
-> 飞牛 / 群晖等 NAS 也可以直接在「Docker / Container Manager」里搜索镜像 `gloridust/gancook` 创建容器：
-> 端口映射 `3000`，把容器内 `/data` 映射到一个你方便备份的目录即可。
-
-无需设置任何环境变量。如需自定义，可选：
+可选环境变量：
 
 | 变量 | 默认 | 说明 |
 |------|------|------|
-| `TZ` | `Asia/Shanghai` | 时区，影响自动饭局时间 |
-| `AUTH_SECRET` | 自动生成 | 会话签名密钥（留空自动生成并存到 `data/auth.secret`） |
-| `CRON_SECRET` | 自动生成 | 定时触发端点密钥 |
-| `COOKIE_SECURE` | 自动 | 会话 Cookie 是否强制 Secure；默认按请求协议判断，HTTPS 反代识别异常时可设为 `1` |
-
-## 📖 入门指南（5 分钟上手）
-
-1. **部署并打开** —— 用上面任一方式启动，浏览器访问 `http://<NAS>:3000`。
-2. **建立家庭** —— 首次进入是引导页：填家庭名 + 你的昵称 + 6 位密码，你成为**管理员**。
-3. **家人加入** —— 家人各自打开同一地址 →「注册」，填昵称 + 6 位密码即可。之后登录只需在列表里**点自己的头像**再输密码。
-   （管理员可在「我的 → 家庭管理」里设置**注册口令**或关闭注册。）
-4. **添加菜品** —— 进「菜品」把全家拿手菜加进来（可拍照，自动压缩）。
-5. **开一顿饭局** —— 首页或「饭局」点「开饭局」，选餐次/时间/截止；家人进去勾选想吃的，谁做饭点「我来做这顿」。
-6. **设置自动饭局** —— 「我的 → 家庭管理 → 自动饭局」像设闹钟一样添加规则：
-   例如「每日午餐 12:00、前一天 20:00 自动开、提前 2 小时截止」。以后每天自动开局、自动流转。
-7. **看贡献墙** —— 「贡献」页用绿格子记录每个人做饭/点菜的活跃度。
-8. **切换语言** —— 登录页或「我的 → 语言」可在中文 / English 间切换。
-
-> 想换语言或备份？语言在「我的」里随时切；备份只要复制 `data` 目录。
-
-## 🔄 升级到新版本
-
-```bash
-docker compose pull && docker compose up -d
-# docker run 方式：docker pull gloridust/gancook:latest 后重新创建容器
-```
-
-数据与密钥都在 `data` 卷里，升级时数据库会**自动迁移**，登录态保持不变。
-想全自动更新可搭配 [Watchtower](https://containrrr.dev/watchtower/)。
-
-**网页端一键更新（可选）**：在「家庭管理 → 关于与更新」可查看版本、点按钮自动拉新镜像并重建容器。
-需要让容器能访问 Docker：在 `docker-compose.yml` 里挂载 `/var/run/docker.sock` 并以可访问该套接字的用户运行（见 compose 注释）。
-未挂载或权限不足时会自动降级为显示手动更新命令，不影响使用。
-
-## 💾 备份
-
-整个应用的状态只在一个地方：你映射出来的 **`data` 目录**（包含 `app.db` 与 `uploads/`）。
-定时复制这个目录即是完整备份；恢复时放回去再启动即可。
+| `TZ` | `Asia/Shanghai` | 家庭时区，影响日期归属与自动饭局调度 |
+| `DATA_DIR` | `/data`（容器）/ `./data`（本地） | SQLite 数据库与上传图片的存储目录 |
+| `AUTH_SECRET` | 自动生成 | 会话签名密钥（Docker 首启自动生成并持久化到 `data/auth.secret`） |
+| `CRON_SECRET` | 自动生成 | `/api/cron/tick` 定时触发密钥（未配置时仅允许已登录管理员访问） |
+| `COOKIE_SECURE` | 自动 | 会话 Cookie 是否强制 Secure；HTTPS 反代识别异常时可设为 `1` |
 
 ## 🛠️ 本地开发
 
 ```bash
-git clone https://github.com/Gloridust/GanCook.git
-cd GanCook
-npm install
-cp .env.example .env.local   # 本地可按需修改
-npm run db:migrate           # 初始化 SQLite
-npm run dev                  # http://localhost:3000
+npm ci
+cp .env.example .env.local
+npm run db:migrate
+npm run dev
 ```
+
+常用校验命令：
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+## 💾 数据备份
+
+全部状态仅位于挂载的 `data/` 目录（含 `app.db` 与 `uploads/`）。备份只需打包复制该目录，恢复时放回原路径重启容器即可。
 
 ## 🧱 技术栈
 
 - **Next.js 16**（App Router · Server Actions）+ React 19 + TypeScript
-- **SQLite** + **Drizzle ORM**（`better-sqlite3`）
-- **鉴权**：bcrypt + `jose` 签名 JWT + httpOnly Cookie
-- **图片**：`sharp` 压缩转 WebP 落盘
-- **调度**：进程内 `node-cron`（启动钩子 `instrumentation.ts` 拉起）
-- **样式**：TailwindCSS v4 + 自建「牛奶布艺」设计系统 + Framer Motion
-
-## 🗺️ 路线图
-
-- [x] 中英双语（已上线）
-- [ ] 多人协作做饭 / 帮买菜清单
-- [ ] 菜品标签筛选与搜索
-- [ ] 消息提醒（开局 / 截止前推送）
-- [ ] 数据导出与一键备份
-
-欢迎在 Issues 里许愿 🙌
-
-## 🤝 贡献
-
-欢迎 Issue / PR！开发约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+- **SQLite** + **Drizzle ORM**（`better-sqlite3`，WAL 模式）
+- **鉴权**：`bcryptjs` + `jose` JWT Cookie + 内存登录限流
+- **图片**：客户端裁剪 + `sharp` 压缩转 WebP 落盘
+- **调度**：进程内 `node-cron`（`instrumentation.ts` 启动拉起）
+- **样式**：TailwindCSS v4 + Milk Fabric 设计系统 + Framer Motion
 
 ## 📄 License
 
-[MIT](LICENSE) · Made with ❤️ for family dinners
+[MIT](LICENSE)

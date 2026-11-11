@@ -1,4 +1,4 @@
-# 干饭厨子 GanCook — 多阶段构建，输出单容器 standalone 运行包
+# 干饭厨子 GanCook-10k — 多阶段构建，输出单容器 standalone 运行包
 # bookworm-slim (glibc) 以保证 better-sqlite3 / sharp 原生模块兼容
 
 # ---------- 依赖 ----------
@@ -28,11 +28,11 @@ ENV NODE_ENV=production \
     DATA_DIR=/data \
     TZ=Asia/Shanghai
 
-# 版本号（由 CI 构建参数注入，用于「关于与更新」展示与比对）
-ARG APP_VERSION=dev
+# 版本号（构建参数注入，用于「关于系统」展示）
+ARG APP_VERSION=0.5.0
 ENV APP_VERSION=$APP_VERSION
 
-# gosu 用于以 root 启动入口脚本后降权到 app（既非 root 运行，又能在挂载 docker.sock 时访问它）
+# gosu 用于以 root 启动入口脚本后降权到非 root 的 app 用户运行服务
 RUN apt-get update && apt-get install -y --no-install-recommends gosu \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -r app && useradd -r -g app app
@@ -48,7 +48,7 @@ COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh \
     && mkdir -p /data && chown -R app:app /data /app
 VOLUME /data
-# 注意：以 root 启动入口脚本（自动生成密钥 + 处理 docker.sock 权限），随后 gosu 降权到 app 运行服务
+# 以 root 启动入口脚本（自动生成并持久化密钥、修正数据卷属主），随后 gosu 降权到 app 运行服务
 
 EXPOSE 3000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

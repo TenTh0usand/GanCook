@@ -37,7 +37,8 @@ export async function createMeal(input: {
 
   const tz = getSettings().timezone
   const diningSec = localDateTimeToSec(input.date, input.diningTime, tz)
-  const deadlineSec = localDateTimeToSec(input.date, input.deadline, tz)
+  const rawDeadlineSec = localDateTimeToSec(input.date, input.deadline, tz)
+  const deadlineSec = Math.min(rawDeadlineSec, diningSec)
 
   const row = db.transaction(() => {
     const created = db

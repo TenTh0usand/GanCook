@@ -16,8 +16,7 @@ import { ScheduleEditor } from '@/components/admin/schedule-editor'
 import { MembersManager } from '@/components/admin/members-manager'
 import { RunSchedule } from '@/components/admin/run-schedule'
 import { UpdatePanel } from '@/components/admin/update-panel'
-import { APP_VERSION, IMAGE_REPO } from '@/lib/version'
-import { updateCapability } from '@/lib/update'
+import { APP_VERSION, REPO_URL } from '@/lib/version'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +24,6 @@ export default async function AdminPage() {
   const me = await requireAdmin()
   const t = await getT()
   const s = getSettings()
-  const capability = await updateCapability()
   const schedules = db
     .select()
     .from(mealSchedules)
@@ -136,11 +134,7 @@ export default async function AdminPage() {
         <h2 className="mb-3 text-base font-semibold text-ink">
           {t('update.title')}
         </h2>
-        <UpdatePanel
-          current={APP_VERSION}
-          capability={capability}
-          imageRepo={IMAGE_REPO}
-        />
+        <UpdatePanel current={APP_VERSION} repoUrl={REPO_URL} />
       </section>
     </>
   )

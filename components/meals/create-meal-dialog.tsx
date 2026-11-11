@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Segmented } from '@/components/ui/segmented'
 import { useT } from '@/components/i18n-provider'
 import { createMeal } from '@/lib/actions/meals'
-import { MEAL_TYPES, type MealType } from '@/lib/roles'
+import { MEAL_TYPES, guessMealType, type MealType } from '@/lib/roles'
 
 // GanCook-10k：加餐、夜宵
 const DEFAULTS: Record<MealType, { dining: string; deadline: string }> = {
@@ -43,10 +43,23 @@ export function CreateMealDialog({
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
 
-  const changeType = (t: MealType) => {
-    setMealType(t)
-    setDining(DEFAULTS[t].dining)
-    setDeadline(DEFAULTS[t].deadline)
+  const changeType = (next: MealType) => {
+    setMealType(next)
+    setDining(DEFAULTS[next].dining)
+    setDeadline(DEFAULTS[next].deadline)
+  }
+
+  const handleOpenChange = (next: boolean) => {
+    if (next) {
+      const now = new Date()
+      const guessed = guessMealType(now.getHours(), now.getMinutes())
+      setMealType(guessed)
+      setDining(DEFAULTS[guessed].dining)
+      setDeadline(DEFAULTS[guessed].deadline)
+      setDate(today)
+      setError('')
+    }
+    setOpen(next)
   }
 
   const submit = () => {
@@ -64,7 +77,7 @@ export function CreateMealDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent title={t('create.title')}>
         <div className="space-y-4">

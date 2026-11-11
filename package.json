@@ -1,8 +1,8 @@
 {
   "name": "gancook",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "private": true,
-  "description": "干饭厨子 GanCook — 可自部署到 NAS 的家庭点菜系统",
+  "description": "干饭厨子 GanCook-10k — 家庭点菜、备菜与厨房分工系统",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -17,7 +17,6 @@
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
-    "@radix-ui/react-tabs": "^1.1.12",
     "bcryptjs": "^3.0.2",
     "better-sqlite3": "^11.10.0",
     "class-variance-authority": "^0.7.1",
@@ -37,7 +36,6 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.2.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.5",

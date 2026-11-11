@@ -3,7 +3,7 @@ import { and, eq, lte, inArray } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import { meals, mealSchedules } from '@/lib/db/schema'
 import { getSettings } from '@/lib/settings'
-import { dayjs, localDateTimeToSec, nowSec } from '@/lib/time'
+import { dayjs, localDateTimeToSec, nowSec, todayLocal } from '@/lib/time'
 import { linkSlotToMeal } from '@/lib/duties'
 
 // 用餐时间过后多久自动标记「已完成」
@@ -33,10 +33,12 @@ export function tick(): TickResult {
       .where(eq(mealSchedules.enabled, true))
       .all()
 
+    const baseDay = dayjs.tz(todayLocal(tz), 'YYYY-MM-DD', tz)
+
     for (const s of schedules) {
-      // 检查未来 3 天内的候选日期（覆盖较大的提前量）
+      // 检查未来 3 天内的候选日期（覆盖较大的提前量；凌晨 2 点前仍以昨晚所属营业日为起点）
       for (let offset = 0; offset <= 2; offset++) {
-        const day = dayjs().tz(tz).add(offset, 'day')
+        const day = baseDay.add(offset, 'day')
         const date = day.format('YYYY-MM-DD')
         if (!s.weekdays.includes(day.day())) continue
 
