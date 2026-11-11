@@ -29,7 +29,7 @@ ENV NODE_ENV=production \
     TZ=Asia/Shanghai
 
 # 版本号（构建参数注入，用于「关于系统」展示）
-ARG APP_VERSION=0.5.0
+ARG APP_VERSION=v0.5.1
 ENV APP_VERSION=$APP_VERSION
 
 # gosu 用于以 root 启动入口脚本后降权到非 root 的 app 用户运行服务

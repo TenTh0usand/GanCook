@@ -3,7 +3,7 @@ services:
     build:
       context: .
       args:
-        APP_VERSION: ${APP_VERSION:-0.5.0}
+        APP_VERSION: ${APP_VERSION:-v0.5.1}
     image: gancook-custom:latest
     container_name: gancook
     restart: unless-stopped
