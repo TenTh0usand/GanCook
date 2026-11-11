@@ -32,7 +32,7 @@ export function BottomNav() {
   if (/^\/meals\/[^/]+\/order/.test(pathname)) return null
   return (
     <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center pb-[calc(env(safe-area-inset-bottom)+12px)]">
-      <div className="mf-trough pointer-events-auto flex items-center gap-1 border border-black/[0.06] bg-trough/90 p-1.5 shadow-[0_6px_24px_rgba(56,71,60,0.16)] backdrop-blur-md dark:border-white/[0.07]">
+      <div className="mf-trough pointer-events-auto flex items-center gap-1 border border-black/[0.06] bg-trough/90 p-1.5 shadow-[0_6px_24px_rgb(var(--mf-shadow)/0.16)] backdrop-blur-md dark:border-white/[0.07]">
         {TABS.map((tab) => {
           const active =
             pathname === tab.href || pathname.startsWith(tab.href + '/')

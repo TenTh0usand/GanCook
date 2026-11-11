@@ -2,6 +2,7 @@ import { Pencil } from 'lucide-react'
 import { requireUser } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
 import { getT } from '@/lib/i18n/server'
+import { getTheme } from '@/lib/theme-server'
 import { dayjs, todayLocal } from '@/lib/time'
 import { getMyDayRoles } from '@/lib/duties'
 import { guessMealType } from '@/lib/roles'
@@ -17,7 +18,7 @@ export const dynamic = 'force-dynamic'
 export default async function MePage() {
   const user = await requireUser()
   const s = getSettings()
-  const t = await getT()
+  const [t, theme] = await Promise.all([getT(), getTheme()])
 
   // GanCook-10k：今天的家务（按餐次打卡，只改自己的）
   const today = todayLocal(s.timezone)
@@ -60,7 +61,7 @@ export default async function MePage() {
         initial={myRoles}
       />
 
-      <SettingsList isAdmin={user.isAdmin} />
+      <SettingsList isAdmin={user.isAdmin} theme={theme} />
     </>
   )
 }

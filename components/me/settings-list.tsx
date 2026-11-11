@@ -1,15 +1,23 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Languages, KeyRound, Settings, LogOut } from 'lucide-react'
+import { Palette, Languages, KeyRound, Settings, LogOut } from 'lucide-react'
 import { List, Row } from '@/components/ui/list'
 import { IconChip } from '@/components/ui/icon-chip'
 import { LanguageSwitch } from '@/components/language-switch'
+import { ThemeSwitch } from '@/components/theme-switch'
 import { ChangePassword } from '@/components/me/change-password'
 import { useT } from '@/components/i18n-provider'
 import { logout } from '@/lib/actions/auth'
+import type { ThemeName } from '@/lib/theme'
 
-export function SettingsList({ isAdmin }: { isAdmin: boolean }) {
+export function SettingsList({
+  isAdmin,
+  theme,
+}: {
+  isAdmin: boolean
+  theme: ThemeName
+}) {
   const t = useT()
   const [pwOpen, setPwOpen] = useState(false)
   const [, startTransition] = useTransition()
@@ -17,6 +25,16 @@ export function SettingsList({ isAdmin }: { isAdmin: boolean }) {
   return (
     <>
       <List>
+        <Row
+          leading={
+            <IconChip>
+              <Palette />
+            </IconChip>
+          }
+          title={t('me.theme')}
+          trailing={<ThemeSwitch initialTheme={theme} className="w-[172px]" />}
+          chevron={false}
+        />
         <Row
           leading={
             <IconChip>

@@ -1,11 +1,12 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 export interface SegmentOption<T extends string> {
   value: T
-  label: string
+  label: ReactNode
 }
 
 /**
@@ -35,7 +36,7 @@ export function Segmented<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={cn(
-              'relative flex-1 rounded-full px-3 py-2 text-sm font-medium transition-colors',
+              'relative flex-1 whitespace-nowrap rounded-full px-2.5 py-2 text-sm font-medium transition-colors',
               active ? 'text-accent' : 'text-secondary',
             )}
           >

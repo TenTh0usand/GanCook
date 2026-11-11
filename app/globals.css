@@ -22,9 +22,10 @@
   --mf-accent-soft: 78 169 107; /* RGB，用于淡色底/热力图 */
   --mf-tint: #e7f2ea; /* 青菜绿淡色调面（tonal surface / 图标色块底） */
 
-  /* 文字 */
+  /* 文字与底部悬浮深色栏 */
   --mf-ink: #1f2a22; /* 主文字 */
   --mf-secondary: #5d6b60; /* 次文字（≈60%） */
+  --mf-bar: #1f2a22; /* 点菜页底部悬浮胶囊底色（始终保持深底白字） */
 
   /* 状态色 */
   --mf-danger: #d9534f;
@@ -50,6 +51,23 @@
   --radius: 24px;
 }
 
+/* ── 主题配色：浅蓝色（清爽晴空风 · 极淡冰蓝底 + 纯白卡片 + 晴空浅蓝点缀） ── */
+:root[data-theme='sky'] {
+  --mf-base: #f2f7fc; /* 清透晴空浅蓝底 */
+  --mf-surface: #ffffff; /* 纯白浮起表面 */
+  --mf-trough: #e3edf7; /* 柔和云蓝凹槽 */
+  --mf-shadow: 42 72 104; /* 清透海蓝折痕阴影 */
+  --mf-accent: #4a96dc; /* 清爽晴空浅蓝（文字 / 图标 / 选中态） */
+  --mf-accent-strong: #3680c7; /* 主按钮渐变深端（白字清晰通透） */
+  --mf-accent-deep: #2968a8;
+  --mf-accent-soft: 74 150 220;
+  --mf-tint: #e6f2fc; /* 晴空淡蓝色调面（hero 卡片 / 图标底块） */
+  --mf-ink: #1c2733; /* 清爽深蓝黑主文字 */
+  --mf-secondary: #5b6b7c; /* 清透蓝灰次文字 */
+  --mf-bar: #1c2733; /* 底部悬浮条深蓝黑底 */
+  --mf-sheen: 0.8;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --mf-base: #15171a; /* 亮蓝黑 */
@@ -63,6 +81,7 @@
     --mf-tint: #1d2a21;
     --mf-ink: #eef2ec;
     --mf-secondary: #9aa89d;
+    --mf-bar: #282e39;
     --mf-highlight: 255 255 255;
     --mf-sheen: 0.05;
     /* 角色色 · 暗色模式稍提亮 */
@@ -76,6 +95,22 @@
     --mf-role-clean-soft: 108 182 227;
     --mf-role-out: #ec93b3;
     --mf-role-out-soft: 236 147 179;
+  }
+
+  :root[data-theme='sky'] {
+    --mf-base: #131820; /* 静谧夜空深蓝底 */
+    --mf-surface: #1e2633; /* 星夜蓝灰浮起卡片 */
+    --mf-trough: #0d1117; /* 深海凹槽 */
+    --mf-shadow: 0 0 0;
+    --mf-accent: #74b3eb; /* 清透浅空蓝亮色 */
+    --mf-accent-strong: #4a96dc;
+    --mf-accent-deep: #3680c7;
+    --mf-accent-soft: 116 179 235;
+    --mf-tint: #1a2636; /* 夜空蓝暗调面 */
+    --mf-ink: #ebf1f7; /* 清透冰白字 */
+    --mf-secondary: #94a3b5; /* 柔和蓝灰次文字 */
+    --mf-bar: #242f40;
+    --mf-sheen: 0.06;
   }
 }
 
@@ -109,6 +144,9 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-feature-settings: 'cv01', 'ss01';
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 /* 大标题收紧字距，质感更稳（参考设计语言：标题 -0.02em） */
