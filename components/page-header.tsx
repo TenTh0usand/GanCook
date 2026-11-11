@@ -11,7 +11,7 @@ export function PageHeader({
   action?: React.ReactNode
 }) {
   return (
-    <header className="mb-5 flex items-end justify-between gap-3">
+    <header className="mf-enter mb-5 flex items-end justify-between gap-3">
       <div>
         <h1 className="tracking-title text-2xl font-bold text-ink">{title}</h1>
         {subtitle && (

@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { motion } from 'framer-motion'
 import { Search, Sparkles, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useT } from '@/components/i18n-provider'
@@ -211,10 +212,10 @@ export function MenuBrowser({
             </div>
           )}
 
-          {/* 菜单切换（吸顶） */}
+          {/* 菜单切换（吸顶 + 滑动下划线） */}
           <div
             ref={tabsRef}
-            className="sticky top-0 z-20 -mx-4 flex items-end gap-6 bg-base px-5"
+            className="sticky top-0 z-20 -mx-4 flex items-end gap-6 border-b border-black/[0.04] bg-base/92 px-5 backdrop-blur-sm dark:border-white/[0.05]"
             style={{ height: TABS_H }}
           >
             {data.menus.map((m) => (
@@ -224,12 +225,16 @@ export function MenuBrowser({
                 onClick={() => switchMenu(m.id)}
                 className={cn(
                   'relative pb-2.5 text-[15px] transition-colors',
-                  m.id === menuId ? 'font-bold text-ink' : 'text-secondary',
+                  m.id === menuId ? 'font-bold text-ink' : 'text-secondary hover:text-ink',
                 )}
               >
                 {m.label}
                 {m.id === menuId && (
-                  <span className="absolute inset-x-1/4 bottom-0 h-[3px] rounded-full bg-accent" />
+                  <motion.span
+                    layoutId="menu-tab-bar"
+                    transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                    className="absolute inset-x-1/4 bottom-0 h-[3px] rounded-full bg-accent"
+                  />
                 )}
               </button>
             ))}
@@ -258,11 +263,17 @@ export function MenuBrowser({
                     data-sec={s.id}
                     onClick={() => jump(s.id)}
                     className={cn(
-                      'relative flex w-full flex-col items-start gap-1 px-2.5 py-3 text-left text-[13px] leading-tight transition-colors',
-                      on ? 'bg-surface font-semibold text-accent' : 'text-secondary',
+                      'relative flex w-full flex-col items-start gap-1 px-2.5 py-3 text-left text-[13px] leading-tight transition-colors duration-150',
+                      on ? 'bg-surface font-semibold text-accent' : 'text-secondary hover:text-ink',
                     )}
                   >
-                    {on && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-accent" />}
+                    {on && (
+                      <motion.span
+                        layoutId={`menu-sec-bar-${menuId}`}
+                        transition={{ type: 'spring', stiffness: 450, damping: 36 }}
+                        className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-accent"
+                      />
+                    )}
                     {s.badge && (
                       <span
                         className={cn(

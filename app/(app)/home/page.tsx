@@ -55,8 +55,12 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* 问候 hero：绿色调面 */}
-      <div className="mf-tonal mb-6 overflow-hidden p-5">
+      {/* 问候 hero：绿色调面 + 轻柔水印 */}
+      <div className="mf-tonal mf-enter mb-6 overflow-hidden p-5">
+        <UtensilsCrossed
+          className="pointer-events-none absolute -bottom-3 -right-2 h-24 w-24 -rotate-12 text-accent/[0.08]"
+          strokeWidth={1.4}
+        />
         <div className="relative">
           <p className="text-sm font-medium text-accent">{s.familyName}</p>
           <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-title text-ink">
@@ -107,10 +111,10 @@ export default async function HomePage() {
 
       <Link
         href="/meals"
-        className="mt-4 inline-flex items-center gap-1 text-sm text-accent"
+        className="group mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent"
       >
         {t('home.viewAll')}
-        <ArrowRight className="h-4 w-4" />
+        <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
       </Link>
     </>
   )

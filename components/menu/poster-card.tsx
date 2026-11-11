@@ -34,7 +34,7 @@ export const PosterCard = React.forwardRef<
         }
       }}
       className={cn(
-        'mf-pressable relative h-[128px] w-[76%] shrink-0 snap-start overflow-hidden rounded-[22px]',
+        'group mf-pressable relative h-[128px] w-[76%] shrink-0 snap-start overflow-hidden rounded-[22px]',
         !img && 'mf-tonal',
         picked && 'ring-2 ring-accent ring-offset-2 ring-offset-base',
         className,
@@ -43,7 +43,13 @@ export const PosterCard = React.forwardRef<
     >
       {img ? (
         <>
-          <Image src={`/api/uploads/${img}`} alt={dish.name} fill sizes="320px" className="object-cover" />
+          <Image
+            src={`/api/uploads/${img}`}
+            alt={dish.name}
+            fill
+            sizes="320px"
+            className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+          />
           {/* 左侧渐变，保证文字可读 */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/25 to-transparent" />
         </>

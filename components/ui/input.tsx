@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
-/** 凹陷输入框（trough fill + 顶部内阴影），聚焦时叠青菜绿半透 ring */
+/** 凹陷输入框（trough fill + 顶部内阴影），聚焦时轻柔浮起为白布面并叠青菜绿柔光描边 */
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
@@ -11,7 +11,6 @@ export const Input = React.forwardRef<
       ref={ref}
       className={cn(
         'mf-inset h-11 w-full px-4 text-[15px] text-ink outline-none placeholder:text-secondary/70',
-        'focus:ring-2 focus:ring-accent/50',
         className,
       )}
       {...props}
@@ -29,7 +28,6 @@ export const Textarea = React.forwardRef<
       ref={ref}
       className={cn(
         'mf-inset min-h-[88px] w-full px-4 py-3 text-[15px] text-ink outline-none placeholder:text-secondary/70',
-        'focus:ring-2 focus:ring-accent/50',
         className,
       )}
       {...props}

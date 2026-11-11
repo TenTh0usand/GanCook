@@ -45,7 +45,7 @@ export async function MealCard({
   return (
     <Link
       href={`/meals/${meal.id}`}
-      className="mf-raised mf-pressable flex items-center gap-3.5 p-3.5"
+      className="group mf-raised mf-pressable flex items-center gap-3.5 p-3.5"
     >
       <div
         className={cn(
@@ -91,8 +91,13 @@ export async function MealCard({
           </span>
         )}
         <div className="flex items-center gap-1">
-          <Badge tone={status.tone}>{t(status.labelKey)}</Badge>
-          <ChevronRight className="h-4 w-4 text-secondary/40" />
+          <Badge tone={status.tone}>
+            {meal.status === 'ordering' && (
+              <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+            )}
+            {t(status.labelKey)}
+          </Badge>
+          <ChevronRight className="h-4 w-4 text-secondary/40 transition-transform duration-150 group-hover:translate-x-0.5" />
         </div>
       </div>
     </Link>

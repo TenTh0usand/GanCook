@@ -36,21 +36,21 @@ export const MenuDishCard = React.forwardRef<
         }
       }}
       className={cn(
-        'mf-raised mf-pressable relative overflow-hidden p-0 text-left',
+        'group mf-raised mf-pressable relative overflow-hidden p-0 text-left',
         picked && 'ring-2 ring-accent ring-offset-2 ring-offset-base',
         dimmed && 'opacity-50',
         className,
       )}
       {...props}
     >
-      <div className="relative aspect-[4/3] w-full">
+      <div className="relative aspect-[4/3] w-full overflow-hidden">
         {dish.imagePath ? (
           <Image
             src={`/api/uploads/${dish.imagePath}`}
             alt={dish.name}
             fill
             sizes="(max-width: 480px) 40vw, 170px"
-            className="object-cover"
+            className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
           />
         ) : (
           <div className="mf-img-empty flex h-full w-full items-center justify-center">
@@ -88,8 +88,10 @@ export const MenuDishCard = React.forwardRef<
         {orderMode && (
           <span
             className={cn(
-              'absolute bottom-2.5 right-2.5 flex h-6 w-6 items-center justify-center rounded-full',
-              picked ? 'bg-accent-strong text-white' : 'border-[1.5px] border-accent text-accent',
+              'absolute bottom-2.5 right-2.5 flex h-6 w-6 items-center justify-center rounded-full transition-[transform,background-color,border-color,color] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+              picked
+                ? 'scale-105 bg-accent-strong text-white shadow-xs'
+                : 'scale-100 border-[1.5px] border-accent/85 text-accent',
             )}
           >
             {picked ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />}

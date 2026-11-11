@@ -55,7 +55,7 @@ export function Row({
       </span>
       {trailing}
       {showChevron && (
-        <ChevronRight className="h-4 w-4 shrink-0 text-secondary/50" />
+        <ChevronRight className="h-4 w-4 shrink-0 text-secondary/50 transition-transform duration-150 group-hover:translate-x-0.5" />
       )}
     </>
   )
@@ -63,7 +63,7 @@ export function Row({
   const cls = cn(
     'mf-row',
     leading ? 'mf-row-inset' : '',
-    interactive && 'mf-row-press',
+    interactive && 'group mf-row-press',
     className,
   )
 

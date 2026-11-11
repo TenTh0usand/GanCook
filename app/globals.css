@@ -32,6 +32,7 @@
 
   /* 高光 */
   --mf-highlight: 255 255 255;
+  --mf-sheen: 0.75;
 
   /* GanCook-10k · 角色色（只用于「角色语义」：贡献、家务打卡、备菜等；按钮 / 导航仍用青菜绿）
      低饱和、与青菜绿同一亮度档；-soft 为 RGB 三元组，给 rgb(var(--x) / a) 做淡色底与热力图深浅 */
@@ -63,6 +64,7 @@
     --mf-ink: #eef2ec;
     --mf-secondary: #9aa89d;
     --mf-highlight: 255 255 255;
+    --mf-sheen: 0.05;
     /* 角色色 · 暗色模式稍提亮 */
     --mf-role-prep: #f0a965;
     --mf-role-prep-soft: 240 169 101;
@@ -114,26 +116,41 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* ── 扁平卡片（发丝描边，无阴影无高光）── */
+/* ── 布艺卡片（紧贴边缘的微折痕阴影 + 顶边柔光）── */
 .mf-raised {
   background: var(--mf-surface);
-  border: 1px solid rgba(var(--mf-shadow) / 0.1);
+  border: 1px solid rgba(var(--mf-shadow) / 0.09);
   border-radius: var(--radius);
+  box-shadow:
+    0 1px 3px rgba(var(--mf-shadow) / 0.05),
+    inset 0 1px 0 rgba(var(--mf-highlight) / var(--mf-sheen));
   position: relative;
 }
 
 /* 选中凸起（Tab / 分段 / 键盘按键）——唯一保留的轻微上浮 */
 .mf-bump {
   background: var(--mf-surface);
-  box-shadow: 0 1px 4px rgba(var(--mf-shadow) / 0.18);
+  box-shadow:
+    0 1px 4px rgba(var(--mf-shadow) / 0.16),
+    inset 0 1px 0 rgba(var(--mf-highlight) / var(--mf-sheen));
 }
 
-/* 可按压：仅做缩放反馈（扁平，不改阴影） */
+/* 可按压：GPU transform 弹性缩放反馈 + 桌面端轻微描边提亮 */
 .mf-pressable {
-  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+@media (hover: hover) {
+  .mf-raised.mf-pressable:hover,
+  .mf-outline.mf-pressable:hover {
+    border-color: rgba(var(--mf-shadow) / 0.18);
+  }
 }
 .mf-pressable:active {
-  transform: scale(0.98);
+  transform: scale(0.976);
 }
 
 /* 菜品空图占位：暖青渐变 + 柔光，不再是死板灰块 */
@@ -141,7 +158,7 @@ body {
   background:
     radial-gradient(
       ellipse at 50% 30%,
-      rgb(var(--mf-accent-soft) / 0.1) 0%,
+      rgb(var(--mf-accent-soft) / 0.12) 0%,
       transparent 70%
     ),
     var(--mf-trough);
@@ -153,26 +170,48 @@ body {
   border-radius: 999px;
 }
 
-/* 凹陷输入框 */
+/* 凹陷输入框（聚焦时轻柔浮起为白布面 + 青菜绿柔光描边） */
 .mf-inset {
   background: var(--mf-trough);
   border-radius: 18px;
-  box-shadow: inset 0 1px 2px rgba(var(--mf-shadow) / 0.18);
+  box-shadow: inset 0 1px 2px rgba(var(--mf-shadow) / 0.16);
+  transition:
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.mf-inset:focus-within,
+input.mf-inset:focus,
+textarea.mf-inset:focus {
+  background: var(--mf-surface);
+  box-shadow:
+    inset 0 0 0 1.5px rgb(var(--mf-accent-soft) / 0.6),
+    0 2px 8px rgba(var(--mf-shadow) / 0.05);
 }
 
-/* 主要按钮填充（青菜绿实色，扁平） */
+/* 主要按钮填充（轻柔顶光渐变 + 自然折痕，保持温润感） */
 .mf-accent-fill {
-  background: var(--mf-accent-strong);
+  background: linear-gradient(180deg, var(--mf-accent) 0%, var(--mf-accent-strong) 100%);
+  box-shadow:
+    0 2px 8px rgb(var(--mf-accent-soft) / 0.24),
+    inset 0 1px 0 rgb(255 255 255 / 0.2);
   color: #fff;
 }
 
-/* ── Dialog / Sheet 动画（替代 tailwindcss-animate） ── */
+/* ── Dialog / Sheet 进出场动画（纯 transform / opacity，零重排） ── */
 @keyframes mf-fade-in {
   from {
     opacity: 0;
   }
   to {
     opacity: 1;
+  }
+}
+@keyframes mf-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 @keyframes mf-slide-up {
@@ -183,15 +222,65 @@ body {
     transform: translateY(0);
   }
 }
+@keyframes mf-slide-down {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes mf-pop-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes mf-pop-out {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 0.97;
+  }
+}
+@keyframes mf-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.mf-enter {
+  animation: mf-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
 .mf-overlay[data-state='open'] {
-  animation: mf-fade-in 0.2s ease;
+  animation: mf-fade-in 0.2s ease-out;
+}
+.mf-overlay[data-state='closed'] {
+  animation: mf-fade-out 0.16s ease-in;
 }
 .mf-sheet[data-state='open'] {
-  animation: mf-slide-up 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: mf-slide-up 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mf-sheet[data-state='closed'] {
+  animation: mf-slide-down 0.2s cubic-bezier(0.4, 0, 1, 1);
 }
 @media (min-width: 640px) {
   .mf-sheet[data-state='open'] {
-    animation: mf-fade-in 0.2s ease;
+    animation: mf-pop-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .mf-sheet[data-state='closed'] {
+    animation: mf-pop-out 0.15s ease-in;
   }
 }
 
@@ -239,9 +328,16 @@ body {
   flex: none;
 }
 
-/* 色调面卡片（柔和绿底，用于 hero / 强调区块） */
+/* 色调面卡片（柔和绿底 + 左上角温润环境光 + 内描边，用于 hero / 强调区块） */
 .mf-tonal {
-  background: var(--mf-tint);
+  background:
+    radial-gradient(
+      120% 120% at 0% 0%,
+      rgb(var(--mf-accent-soft) / 0.14) 0%,
+      transparent 65%
+    ),
+    var(--mf-tint);
+  box-shadow: inset 0 0 0 1px rgb(var(--mf-accent-soft) / 0.13);
   border-radius: var(--radius);
   position: relative;
 }
@@ -268,4 +364,16 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* 尊重系统「减弱动态效果」偏好，零性能负担 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
