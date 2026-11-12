@@ -1,5 +1,5 @@
-/** 当前应用版本（构建时由 Dockerfile ARG APP_VERSION 注入；本地默认 v0.5.2） */
-export const APP_VERSION = process.env.APP_VERSION || 'v0.5.2'
+/** 当前应用版本（构建时由 Dockerfile ARG APP_VERSION 注入；本地默认 v0.5.3） */
+export const APP_VERSION = process.env.APP_VERSION || 'v0.5.3'
 
 /** 项目代码仓库地址（GanCook-10k 自维护定制版） */
 export const REPO_URL = 'https://github.com/TenTh0usand/GanCook'

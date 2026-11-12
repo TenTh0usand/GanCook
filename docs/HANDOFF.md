@@ -1,6 +1,6 @@
 # GanCook-10k 交接文档（给接手的 Agent / 开发者）
 
-> 最后更新：2026-11-11 · 对应版本：正式环境 **`v0.5.2`**（P1–P4 + 全项目体检清理 + 牛奶布艺轻量动效与 UI 质感优化已上线）；下一期 P5
+> 最后更新：2026-11-12 · 对应版本：正式环境 **`v0.5.3`**（P1–P4 + 全项目体检清理 + 牛奶布艺轻量动效 + 晴空浅蓝双主题配色均已上线），开发环境同为 `main`；下一期 P5
 >
 > 读完本文就能接着干。更完整的过程记录（每次改动、截图、决策原话）在用户的 Obsidian 单文件手册里（见 §2）。
 
@@ -83,8 +83,9 @@ GanCook-10k 新增 / 改动的关键文件：
 | `components/menu/order-menu.tsx` + `app/(app)/meals/[id]/order` | 全屏点菜页 |
 | `components/ui/half-stars.tsx`、`radar-chart.tsx` | 半星评分输入、六边形雷达图（手写 SVG） |
 | `app/(app)/stats`（`/wall` 跳转到这）、`app/(app)/prep` | 统计页、备菜页 |
-| `Dockerfile.prebuilt` + `.dockerignore` | 快速部署镜像（拷贝宿主机构建产物；**必须排除 `.next/standalone/data` 开发库**） |
-| `app/globals.css` | 新增 `--mf-role-*` 角色色变量（含暗色） |
+| `Dockerfile.prebuilt` + `.dockerignore` | 快速部署镜像（拷贝宿主机构建产物；**必须排除 `.next/standalone/data` 开发库**，支持 `gancook-base:node22` 离线底座） |
+| `lib/theme.ts` + `lib/theme-server.ts` + `components/theme-switch.tsx` | 主题配色切换（`green` 青菜绿 / `sky` 浅蓝色，Cookie 按设备记忆，SSR 零闪烁 + 客户端 0ms 切换） |
+| `app/globals.css` | 新增 `--mf-role-*` 角色色变量与 `:root[data-theme='sky']` 晴空浅蓝色板（均含暗色模式） |
 
 ## 6. 数据模型（新增部分）
 
@@ -160,3 +161,4 @@ GanCook-10k 新增 / 改动的关键文件：
 | `v0.5.0` | P4 备菜页 |
 | `v0.5.1` | 全项目代码体检与 Bug 修复、去上游化自维护清理、跨午夜 02:00 夜宵归属、PIN 登录限流 |
 | `v0.5.2` | 牛奶布艺卡片光影质感、弹窗进出场动画与小屏适配、纯 GPU 微交互与滑动指示器、NAS 离线镜像底座 |
+| `v0.5.3` | 新增清爽晴空「浅蓝色」主题配色（「我的 → 主题配色」一键 0ms 切换，按设备独立记忆，含夜间星夜深蓝适配） |
