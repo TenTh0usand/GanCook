@@ -31,6 +31,7 @@ export async function MealCard({
   participants,
   tz = TIMEZONE,
   score,
+  dishes,
 }: {
   meal: Meal
   cookName?: string | null
@@ -38,6 +39,8 @@ export async function MealCard({
   tz?: string
   /** GanCook-10k（P3）：全家平均分（×10） */
   score?: number | null
+  /** 这顿点了哪些菜（历史 / 搜索结果里显示一行） */
+  dishes?: string[]
 }) {
   const t = await getT()
   const status = STATUS_META[meal.status]
@@ -81,6 +84,9 @@ export async function MealCard({
             </span>
           )}
         </div>
+        {dishes && dishes.length > 0 && (
+          <p className="mt-1 truncate text-xs text-ink/80">{dishes.join(t('common.listSep'))}</p>
+        )}
       </div>
 
       <div className="relative flex shrink-0 flex-col items-end gap-1">

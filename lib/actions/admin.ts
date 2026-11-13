@@ -131,7 +131,7 @@ export async function setMemberAdmin(
 }
 
 export async function runScheduleNow(): Promise<
-  { ok: true; created: number; started: number; finished: number } | { ok: false; error: string }
+  { ok: true; created: number; started: number; finished: number; purged: number } | { ok: false; error: string }
 > {
   const r = await requireAdminUser()
   if (!r.ok) return r

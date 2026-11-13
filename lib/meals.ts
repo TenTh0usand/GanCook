@@ -86,6 +86,25 @@ export function listMeals(): Meal[] {
   return db.select().from(meals).orderBy(desc(meals.diningTime)).all()
 }
 
+/** 一批饭局各自点了哪些菜（去重，按首次点菜时间排序），饭局卡片 / 历史搜索用 */
+export function getMealDishNames(mealIds: string[]): Map<string, string[]> {
+  const map = new Map<string, string[]>()
+  if (mealIds.length === 0) return map
+  const rows = db
+    .select({ mealId: orders.mealId, name: dishes.name })
+    .from(orders)
+    .innerJoin(dishes, eq(orders.dishId, dishes.id))
+    .where(inArray(orders.mealId, mealIds))
+    .orderBy(asc(orders.createdAt))
+    .all()
+  for (const r of rows) {
+    const list = map.get(r.mealId) ?? []
+    if (!list.includes(r.name)) list.push(r.name)
+    map.set(r.mealId, list)
+  }
+  return map
+}
+
 /** 一批饭局的点菜人数（SQL GROUP BY 去重统计） */
 export function getMealParticipantCounts(mealIds: string[]): Map<string, number> {
   const map = new Map<string, number>()

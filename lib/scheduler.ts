@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, eq, lte, inArray } from 'drizzle-orm'
+import { and, eq, lte, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import { meals, mealSchedules } from '@/lib/db/schema'
 import { getSettings } from '@/lib/settings'
@@ -9,10 +9,14 @@ import { linkSlotToMeal } from '@/lib/duties'
 // 用餐时间过后多久自动标记「已完成」
 const DONE_AFTER_SEC = 4 * 3600
 
+/** 空的自动饭局（没人点菜 / 评分 / 认领 / 打卡家务 / 记备菜）用餐后多久自动删除 */
+export const PURGE_EMPTY_AUTO_AFTER_SEC = 3 * 86400
+
 export type TickResult = {
   created: number
   started: number
   finished: number
+  purged: number
 }
 
 /**
@@ -97,7 +101,23 @@ export function tick(): TickResult {
       )
       .run().changes
 
-    return { created, started, finished }
+    // 4) 清理空的自动饭局：自动生成、已结束、用餐已过 3 天，且这一餐没有任何记录
+    //    （点菜、评分、掌勺、同餐次的备菜 / 做菜 / 善后打卡、备菜记录都没有）——多半是没人记或凑合一顿
+    const purged = db.run(sql`
+      DELETE FROM meals
+      WHERE is_auto = 1
+        AND status IN ('done', 'cancelled')
+        AND cook_id IS NULL
+        AND dining_time <= ${now - PURGE_EMPTY_AUTO_AFTER_SEC}
+        AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.meal_id = meals.id)
+        AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.meal_id = meals.id)
+        AND NOT EXISTS (SELECT 1 FROM meal_roles mr
+                        WHERE mr.meal_id = meals.id OR (mr.date = meals.date AND mr.slot = meals.meal_type))
+        AND NOT EXISTS (SELECT 1 FROM prep_logs p
+                        WHERE p.meal_id = meals.id OR (p.date = meals.date AND p.slot = meals.meal_type))
+    `).changes
+
+    return { created, started, finished, purged }
   })
 }
 
@@ -112,7 +132,7 @@ export async function startScheduler() {
   cron.schedule('*/5 * * * *', () => {
     try {
       const r = tick()
-      if (r.created || r.started || r.finished)
+      if (r.created || r.started || r.finished || r.purged)
         console.log('[scheduler]', r)
     } catch (e) {
       console.error('[scheduler] tick failed', e)

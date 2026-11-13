@@ -25,6 +25,7 @@ export function RunSchedule() {
             c: res.created,
             s: res.started,
             f: res.finished,
+            p: res.purged,
           }),
         )
         router.refresh()
