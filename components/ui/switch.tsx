@@ -35,8 +35,9 @@ export function Switch({
     >
       <span
         className={cn(
-          'pointer-events-none absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-active:scale-95',
+          'pointer-events-none absolute left-1 top-1 h-5 w-5 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-active:scale-95',
           checked ? 'translate-x-5' : 'translate-x-0',
+          checked && !color ? 'bg-on-accent' : 'bg-white',
         )}
       />
     </button>

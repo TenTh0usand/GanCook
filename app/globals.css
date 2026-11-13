@@ -48,7 +48,56 @@
   --mf-role-out: #d9779a; /* 外出 · 莓果粉 */
   --mf-role-out-soft: 217 119 154;
 
-  --radius: 24px;
+  /* v0.6 · 结构令牌（参考 Lobe UI：发丝描边 + 多层柔和投影 + 统一圆角体系） */
+  --mf-on-accent: #ffffff; /* 主色按钮上的文字 / 图标 */
+  --mf-hairline: rgb(var(--mf-shadow) / 0.09); /* 卡片 / 列表发丝描边 */
+  --mf-hairline-strong: rgb(var(--mf-shadow) / 0.16); /* 悬停加深描边 */
+  --mf-focus: rgb(var(--mf-accent-soft) / 0.55); /* 输入框聚焦描边 */
+  --mf-tonal-glow: rgb(var(--mf-accent-soft) / 0.14); /* hero 卡片左上角环境光 */
+  --mf-accent-shadow: 0 1px 2px rgb(var(--mf-accent-soft) / 0.18), 0 4px 12px -2px rgb(var(--mf-accent-soft) / 0.28);
+  --mf-elev-1: 0 1px 2px rgb(var(--mf-shadow) / 0.04), 0 2px 6px -2px rgb(var(--mf-shadow) / 0.06);
+  --mf-elev-2: 0 1px 2px rgb(var(--mf-shadow) / 0.07), 0 3px 8px -2px rgb(var(--mf-shadow) / 0.12);
+  --mf-elev-3:
+    0 24px 48px rgb(var(--mf-shadow) / 0.08), 0 10px 20px rgb(var(--mf-shadow) / 0.06),
+    0 4px 8px rgb(var(--mf-shadow) / 0.04), 0 1px 2px rgb(var(--mf-shadow) / 0.04);
+
+  --radius: 24px; /* 卡片 */
+  --radius-list: 22px; /* 分组列表 */
+  --radius-field: 18px; /* 输入框 / 小卡片 */
+}
+
+/* ── 主题配色：Lobe 极简（取自 lobehub/lobe-mygo · Lobe UI 设计令牌：中性黑白 + 发丝描边 + 多层柔投影） ── */
+:root[data-theme='lobe'] {
+  --mf-base: #f8f8f8; /* colorBgLayout */
+  --mf-surface: #ffffff; /* colorBgContainer */
+  --mf-trough: #efefef; /* colorFillSecondary on layout */
+  --mf-shadow: 0 0 0;
+  --mf-accent: #1f1f1f; /* colorText / 选中态 */
+  --mf-accent-strong: #222222; /* colorPrimary */
+  --mf-accent-deep: #000000;
+  --mf-accent-soft: 0 0 0;
+  --mf-tint: #f2f2f2; /* colorPrimaryBg 一档 */
+  --mf-ink: #1f1f1f; /* colorText */
+  --mf-secondary: #666666; /* colorTextSecondary */
+  --mf-bar: #141414;
+  --mf-sheen: 0;
+  --mf-on-accent: #f8f8f8; /* colorPrimaryForeground */
+  --mf-hairline: rgb(0 0 0 / 0.07); /* colorBorderSecondary */
+  --mf-hairline-strong: rgb(0 0 0 / 0.12); /* colorBorder */
+  --mf-focus: rgb(0 0 0 / 0.3);
+  --mf-tonal-glow: transparent;
+  --mf-accent-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 2px 6px rgb(0 0 0 / 0.08);
+  /* boxShadowTertiary / Secondary / boxShadow（Lobe UI 原值） */
+  --mf-elev-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 2px 4px rgb(0 0 0 / 0.02);
+  --mf-elev-2:
+    0 1.2px 1.5px rgb(0 0 0 / 0.01), 0 2.8px 3.7px -2px rgb(0 0 0 / 0.01),
+    0 5.25px 7px rgb(0 0 0 / 0.02), 0 9.4px 12.5px rgb(0 0 0 / 0.03), 0 0 0 1px rgb(0 0 0 / 0.05);
+  --mf-elev-3:
+    0 40px 80px rgb(0 0 0 / 0.06), 0 20px 40px rgb(0 0 0 / 0.05), 0 10px 20px rgb(0 0 0 / 0.04),
+    0 5px 10px rgb(0 0 0 / 0.03), 0 2px 4px rgb(0 0 0 / 0.02);
+  --radius: 16px; /* borderRadiusLG 适配手机 */
+  --radius-list: 14px;
+  --radius-field: 12px;
 }
 
 /* ── 主题配色：浅蓝色（清爽晴空风 · 极淡冰蓝底 + 纯白卡片 + 晴空浅蓝点缀） ── */
@@ -95,6 +144,43 @@
     --mf-role-clean-soft: 108 182 227;
     --mf-role-out: #ec93b3;
     --mf-role-out-soft: 236 147 179;
+    /* 暗色结构令牌：发丝描边改用白色微光（原先用黑色阴影色描边在暗底上看不见） */
+    --mf-hairline: rgb(255 255 255 / 0.07);
+    --mf-hairline-strong: rgb(255 255 255 / 0.13);
+    --mf-accent-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 12px -2px rgb(var(--mf-accent-soft) / 0.22);
+    --mf-elev-1: 0 1px 2px rgb(0 0 0 / 0.3);
+    --mf-elev-2: 0 1px 2px rgb(0 0 0 / 0.35), 0 3px 8px -2px rgb(0 0 0 / 0.4);
+    --mf-elev-3:
+      0 24px 48px rgb(0 0 0 / 0.4), 0 8px 16px rgb(0 0 0 / 0.3), 0 0 0 1px rgb(255 255 255 / 0.06);
+    --mf-tonal-glow: rgb(var(--mf-accent-soft) / 0.1);
+  }
+
+  :root[data-theme='lobe'] {
+    --mf-base: #000000; /* colorBgLayout */
+    --mf-surface: #141414; /* colorBgContainer ~ Elevated */
+    --mf-trough: #1c1c1c;
+    --mf-shadow: 0 0 0;
+    --mf-accent: #ededed;
+    --mf-accent-strong: #e6e6e6; /* colorPrimary（暗色为白） */
+    --mf-accent-deep: #ffffff;
+    --mf-accent-soft: 255 255 255;
+    --mf-tint: #161616;
+    --mf-ink: #e6e6e6;
+    --mf-secondary: #a8a8a8;
+    --mf-bar: #1c1c1c;
+    --mf-sheen: 0;
+    --mf-on-accent: #0a0a0a;
+    --mf-hairline: rgb(255 255 255 / 0.08);
+    --mf-hairline-strong: rgb(255 255 255 / 0.14);
+    --mf-focus: rgb(255 255 255 / 0.32);
+    --mf-tonal-glow: transparent;
+    --mf-accent-shadow: none;
+    --mf-elev-1: 0 1px 2px rgb(0 0 0 / 0.06), 0 2px 4px rgb(0 0 0 / 0.03);
+    --mf-elev-2:
+      0 5.25px 7px rgb(0 0 0 / 0.03), 0 9.4px 12.5px rgb(0 0 0 / 0.05), 0 0 0 1px rgb(255 255 255 / 0.1);
+    --mf-elev-3:
+      0 40px 80px rgb(0 0 0 / 0.09), 0 20px 40px rgb(0 0 0 / 0.08), 0 10px 20px rgb(0 0 0 / 0.06),
+      0 0 0 1px rgb(255 255 255 / 0.12);
   }
 
   :root[data-theme='sky'] {
@@ -126,6 +212,7 @@
   --color-secondary: var(--mf-secondary);
   --color-danger: var(--mf-danger);
   --color-warn: var(--mf-warn);
+  --color-on-accent: var(--mf-on-accent);
   --radius-mf: var(--radius);
   --font-sans:
     ui-sans-serif, system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei',
@@ -154,13 +241,13 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* ── 布艺卡片（紧贴边缘的微折痕阴影 + 顶边柔光）── */
+/* ── 布艺卡片（发丝描边 + 多层柔投影 + 顶边柔光）── */
 .mf-raised {
   background: var(--mf-surface);
-  border: 1px solid rgba(var(--mf-shadow) / 0.09);
+  border: 1px solid var(--mf-hairline);
   border-radius: var(--radius);
   box-shadow:
-    0 1px 3px rgba(var(--mf-shadow) / 0.05),
+    var(--mf-elev-1),
     inset 0 1px 0 rgba(var(--mf-highlight) / var(--mf-sheen));
   position: relative;
 }
@@ -169,7 +256,7 @@ body {
 .mf-bump {
   background: var(--mf-surface);
   box-shadow:
-    0 1px 4px rgba(var(--mf-shadow) / 0.16),
+    var(--mf-elev-2),
     inset 0 1px 0 rgba(var(--mf-highlight) / var(--mf-sheen));
 }
 
@@ -184,7 +271,7 @@ body {
 @media (hover: hover) {
   .mf-raised.mf-pressable:hover,
   .mf-outline.mf-pressable:hover {
-    border-color: rgba(var(--mf-shadow) / 0.18);
+    border-color: var(--mf-hairline-strong);
   }
 }
 .mf-pressable:active {
@@ -211,8 +298,8 @@ body {
 /* 凹陷输入框（聚焦时轻柔浮起为白布面 + 青菜绿柔光描边） */
 .mf-inset {
   background: var(--mf-trough);
-  border-radius: 18px;
-  box-shadow: inset 0 1px 2px rgba(var(--mf-shadow) / 0.16);
+  border-radius: var(--radius-field);
+  box-shadow: inset 0 1px 2px rgba(var(--mf-shadow) / 0.12);
   transition:
     background-color 0.18s ease,
     box-shadow 0.18s ease;
@@ -222,17 +309,17 @@ input.mf-inset:focus,
 textarea.mf-inset:focus {
   background: var(--mf-surface);
   box-shadow:
-    inset 0 0 0 1.5px rgb(var(--mf-accent-soft) / 0.6),
-    0 2px 8px rgba(var(--mf-shadow) / 0.05);
+    inset 0 0 0 1.5px var(--mf-focus),
+    var(--mf-elev-1);
 }
 
-/* 主要按钮填充（轻柔顶光渐变 + 自然折痕，保持温润感） */
+/* 主要按钮填充（轻柔顶光渐变 + 多层主色柔投影） */
 .mf-accent-fill {
   background: linear-gradient(180deg, var(--mf-accent) 0%, var(--mf-accent-strong) 100%);
   box-shadow:
-    0 2px 8px rgb(var(--mf-accent-soft) / 0.24),
-    inset 0 1px 0 rgb(255 255 255 / 0.2);
-  color: #fff;
+    var(--mf-accent-shadow),
+    inset 0 1px 0 rgb(255 255 255 / calc(var(--mf-sheen) * 0.25));
+  color: var(--mf-on-accent);
 }
 
 /* ── Dialog / Sheet 进出场动画（纯 transform / opacity，零重排） ── */
@@ -327,8 +414,9 @@ textarea.mf-inset:focus {
 /* iOS 内嵌分组列表：一个圆角容器，内部行用发丝线分隔 */
 .mf-list {
   background: var(--mf-surface);
-  border: 1px solid rgba(var(--mf-shadow) / 0.1);
-  border-radius: 22px;
+  border: 1px solid var(--mf-hairline);
+  border-radius: var(--radius-list);
+  box-shadow: var(--mf-elev-1);
   overflow: hidden;
 }
 .mf-row {
@@ -341,49 +429,48 @@ textarea.mf-inset:focus {
 }
 /* 行间发丝分隔线，从图标右侧起（iOS inset） */
 .mf-row + .mf-row {
-  box-shadow: inset 0 1px 0 rgba(var(--mf-shadow) / 0.1);
+  box-shadow: inset 0 1px 0 var(--mf-hairline);
 }
 .mf-row + .mf-row.mf-row-inset {
-  box-shadow: inset 56px 1px 0 -55px rgba(var(--mf-shadow) / 0.1);
+  box-shadow: inset 56px 1px 0 -55px var(--mf-hairline);
 }
 .mf-row-press {
   transition: background-color 0.15s ease;
 }
 .mf-row-press:active {
-  background: rgba(var(--mf-shadow) / 0.05);
+  background: var(--mf-hairline);
 }
 
-/* 图标色块（行/卡片的前导标识，青菜绿调） */
+/* 图标色块（行/卡片的前导标识，主色调） */
 .mf-chip {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 11px;
+  border-radius: calc(var(--radius-field) * 0.62);
   background: var(--mf-tint);
   color: var(--mf-accent);
   flex: none;
 }
 
-/* 色调面卡片（柔和绿底 + 左上角温润环境光 + 内描边，用于 hero / 强调区块） */
+/* 色调面卡片（柔和主色底 + 左上角环境光 + 内描边，用于 hero / 强调区块） */
 .mf-tonal {
   background:
-    radial-gradient(
-      120% 120% at 0% 0%,
-      rgb(var(--mf-accent-soft) / 0.14) 0%,
-      transparent 65%
-    ),
+    radial-gradient(120% 120% at 0% 0%, var(--mf-tonal-glow) 0%, transparent 65%),
     var(--mf-tint);
-  box-shadow: inset 0 0 0 1px rgb(var(--mf-accent-soft) / 0.13);
+  box-shadow: inset 0 0 0 1px rgb(var(--mf-accent-soft) / 0.12);
   border-radius: var(--radius);
   position: relative;
+}
+:root[data-theme='lobe'] .mf-tonal {
+  box-shadow: inset 0 0 0 1px var(--mf-hairline);
 }
 
 /* 描边卡片（极简扁平，制造层次对比） */
 .mf-outline {
   background: var(--mf-surface);
-  border: 1px solid rgba(var(--mf-shadow) / 0.12);
+  border: 1px solid var(--mf-hairline-strong);
   border-radius: var(--radius);
 }
 

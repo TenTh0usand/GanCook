@@ -60,7 +60,7 @@ export const MenuDishCard = React.forwardRef<
         {(dish.pinned || dish.isNew) && (
           <div className="absolute left-1.5 top-1.5 flex gap-1">
             {dish.pinned && (
-              <span className="rounded-full bg-accent-strong px-1.5 py-[1px] text-[10px] font-semibold text-white">
+              <span className="rounded-full bg-accent-strong px-1.5 py-[1px] text-[10px] font-semibold text-on-accent">
                 {labels.pinned}
               </span>
             )}
@@ -90,7 +90,7 @@ export const MenuDishCard = React.forwardRef<
             className={cn(
               'absolute bottom-2.5 right-2.5 flex h-6 w-6 items-center justify-center rounded-full transition-[transform,background-color,border-color,color] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
               picked
-                ? 'scale-105 bg-accent-strong text-white shadow-xs'
+                ? 'scale-105 bg-accent-strong text-on-accent shadow-xs'
                 : 'scale-100 border-[1.5px] border-accent/85 text-accent',
             )}
           >

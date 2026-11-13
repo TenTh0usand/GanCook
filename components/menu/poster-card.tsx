@@ -34,7 +34,7 @@ export const PosterCard = React.forwardRef<
         }
       }}
       className={cn(
-        'group mf-pressable relative h-[128px] w-[76%] shrink-0 snap-start overflow-hidden rounded-[22px]',
+        'group mf-pressable relative h-[128px] w-[76%] shrink-0 snap-start overflow-hidden rounded-[var(--radius-list)]',
         !img && 'mf-tonal',
         picked && 'ring-2 ring-accent ring-offset-2 ring-offset-base',
         className,
@@ -76,7 +76,7 @@ export const PosterCard = React.forwardRef<
         </div>
       </div>
       {picked && (
-        <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent-strong text-white">
+        <span className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent-strong text-on-accent">
           <Check className="h-3.5 w-3.5" strokeWidth={3} />
         </span>
       )}

@@ -24,7 +24,7 @@ export function SettingsList({
 
   return (
     <>
-      <List>
+      <List className="mb-4">
         <Row
           leading={
             <IconChip>
@@ -32,9 +32,14 @@ export function SettingsList({
             </IconChip>
           }
           title={t('me.theme')}
-          trailing={<ThemeSwitch initialTheme={theme} className="w-[172px]" />}
+          subtitle={t('me.themeHint')}
           chevron={false}
         />
+        <div className="px-3 pb-3">
+          <ThemeSwitch initialTheme={theme} />
+        </div>
+      </List>
+      <List>
         <Row
           leading={
             <IconChip>

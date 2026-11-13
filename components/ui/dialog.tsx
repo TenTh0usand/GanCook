@@ -20,8 +20,8 @@ export const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'mf-sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[88dvh] max-w-md overflow-y-auto rounded-t-[28px] bg-base p-5 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-[0_-8px_32px_rgba(56,71,60,0.2)] outline-none',
-        'sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-[28px]',
+        'mf-sheet fixed inset-x-0 bottom-0 z-50 mx-auto max-h-[88dvh] max-w-md overflow-y-auto rounded-t-[calc(var(--radius)+4px)] bg-base p-5 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-[var(--mf-elev-3)] outline-none',
+        'sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:rounded-[calc(var(--radius)+4px)]',
         className,
       )}
       {...props}

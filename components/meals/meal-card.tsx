@@ -49,7 +49,7 @@ export async function MealCard({
     >
       <div
         className={cn(
-          'flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[18px] text-[26px]',
+          'flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[var(--radius-field)] text-[26px]',
           status.tile,
         )}
       >

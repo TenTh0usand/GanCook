@@ -225,7 +225,7 @@ function FeatureDialog({
                   onClick={() => setDishId(d.id)}
                   className={cn(
                     'mf-pressable h-8 rounded-full px-3 text-[13px] font-medium',
-                    d.id === dishId ? 'bg-accent-strong text-white' : 'bg-trough text-secondary',
+                    d.id === dishId ? 'bg-accent-strong text-on-accent' : 'bg-trough text-secondary',
                   )}
                 >
                   {d.name}

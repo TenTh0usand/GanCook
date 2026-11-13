@@ -18,7 +18,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'mf-accent-fill mf-pressable text-white',
+        primary: 'mf-accent-fill mf-pressable text-on-accent',
         secondary: 'mf-outline mf-pressable text-accent',
         tonal: 'mf-tonal mf-pressable text-accent',
         ghost: 'mf-pressable text-secondary hover:text-ink',
