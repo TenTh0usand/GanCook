@@ -76,7 +76,7 @@ export function CategoryManager({
                 <span className="flex items-center gap-1.5">
                   <span className="text-[15px] font-medium text-ink">{p.name}</span>
                   {p.badge && (
-                    <span className="rounded-full bg-accent-strong px-1.5 py-[1px] text-[10px] font-semibold text-on-accent">
+                    <span className="rounded-[var(--radius-chip)] bg-accent-strong px-1.5 py-[1px] text-[10px] font-semibold text-on-accent">
                       {p.badge}
                     </span>
                   )}

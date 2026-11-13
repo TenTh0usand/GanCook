@@ -183,18 +183,18 @@ export function DishForm({
             </div>
             <div className="flex flex-wrap gap-1.5 text-xs">
               {catName(dish!.category) && (
-                <span className="rounded-full bg-trough px-2.5 py-1 text-secondary">
+                <span className="rounded-[var(--radius-chip)] bg-trough px-2.5 py-1 text-secondary">
                   {catName(dish!.category)}
                   {catName(dish!.subcategory) ? ` · ${catName(dish!.subcategory)}` : ''}
                 </span>
               )}
               {dish!.pinned && (
-                <span className="rounded-full bg-[rgb(var(--mf-accent-soft)/0.15)] px-2.5 py-1 text-accent">
+                <span className="rounded-[var(--radius-chip)] bg-[rgb(var(--mf-accent-soft)/0.15)] px-2.5 py-1 text-accent">
                   {t('dishform.pinned')}
                 </span>
               )}
               {(dish!.tags ?? []).map((tag) => (
-                <span key={tag} className="rounded-full bg-trough px-2.5 py-1 text-secondary">
+                <span key={tag} className="rounded-[var(--radius-chip)] bg-trough px-2.5 py-1 text-secondary">
                   #{tag}
                 </span>
               ))}

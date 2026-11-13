@@ -277,7 +277,7 @@ export function MenuBrowser({
                     {s.badge && (
                       <span
                         className={cn(
-                          'rounded-full px-1.5 py-[1px] text-[10px] font-semibold',
+                          'rounded-[var(--radius-chip)] px-1.5 py-[1px] text-[10px] font-semibold',
                           s.id === '__top' ? 'bg-[var(--mf-role-prep)] text-white' : 'bg-accent-strong text-on-accent',
                         )}
                       >

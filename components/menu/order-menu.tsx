@@ -78,7 +78,7 @@ export function OrderMenu({
           {error && (
             <p className="mb-2 rounded-2xl bg-danger px-4 py-2 text-center text-sm text-white">{error}</p>
           )}
-          <div className="flex items-center gap-3 rounded-full bg-[var(--mf-bar)] py-2 pl-5 pr-2 shadow-[0_8px_24px_rgb(var(--mf-shadow)/0.28)] ring-1 ring-white/10">
+          <div className="flex items-center gap-3 rounded-[var(--radius-dock)] bg-[var(--mf-bar)] py-2 pl-5 pr-2 shadow-[0_8px_24px_rgb(var(--mf-shadow)/0.28)] ring-1 ring-white/10">
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-semibold text-white">
                 {picked.size > 0 ? t('order.pickedN', { n: picked.size }) : t('order.pickedNone')}
@@ -93,7 +93,7 @@ export function OrderMenu({
                 router.push(`/meals/${mealId}`)
                 router.refresh()
               }}
-              className="mf-accent-fill mf-pressable h-11 shrink-0 rounded-full px-6 text-[15px] font-bold"
+              className="mf-accent-fill mf-pressable mf-btn h-11 shrink-0 rounded-[calc(var(--radius-dock)-6px)] px-6 text-[15px] font-bold"
             >
               {t('order.done')}
             </button>

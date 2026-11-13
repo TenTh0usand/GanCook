@@ -60,12 +60,12 @@ export const MenuDishCard = React.forwardRef<
         {(dish.pinned || dish.isNew) && (
           <div className="absolute left-1.5 top-1.5 flex gap-1">
             {dish.pinned && (
-              <span className="rounded-full bg-accent-strong px-1.5 py-[1px] text-[10px] font-semibold text-on-accent">
+              <span className="rounded-[var(--radius-chip)] bg-accent-strong px-1.5 py-[1px] text-[10px] font-semibold text-on-accent">
                 {labels.pinned}
               </span>
             )}
             {dish.isNew && (
-              <span className="rounded-full bg-[var(--mf-role-prep)] px-1.5 py-[1px] text-[10px] font-semibold text-white">
+              <span className="rounded-[var(--radius-chip)] bg-[var(--mf-role-prep)] px-1.5 py-[1px] text-[10px] font-semibold text-white">
                 {labels.isNew}
               </span>
             )}

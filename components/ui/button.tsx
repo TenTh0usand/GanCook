@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
  * 所有可按压变体带 .mf-pressable（按下缩小 + 阴影收紧）
  */
 const buttonVariants = cva(
-  'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold tracking-[-0.01em] select-none disabled:pointer-events-none disabled:opacity-60 [&_svg]:shrink-0',
+  'mf-btn relative inline-flex items-center justify-center gap-2 whitespace-nowrap tracking-[-0.01em] select-none disabled:pointer-events-none disabled:opacity-60 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
@@ -26,11 +26,11 @@ const buttonVariants = cva(
         trough: 'mf-trough mf-pressable text-secondary',
       },
       size: {
-        sm: 'h-9 px-4 text-sm rounded-2xl',
-        md: 'h-11 px-5 text-[15px] rounded-2xl',
-        lg: 'h-14 px-7 text-base rounded-3xl',
-        icon: 'h-11 w-11 rounded-2xl',
-        pill: 'h-11 px-6 text-[15px] rounded-full',
+        sm: 'h-9 px-4 text-sm rounded-[var(--radius-control)]',
+        md: 'h-11 px-5 text-[15px] rounded-[var(--radius-control)]',
+        lg: 'h-14 px-7 text-base rounded-[calc(var(--radius-control)+4px)]',
+        icon: 'h-11 w-11 rounded-[var(--radius-control)]',
+        pill: 'h-11 px-6 text-[15px] rounded-[var(--radius-pill)]',
       },
     },
     defaultVariants: { variant: 'primary', size: 'md' },

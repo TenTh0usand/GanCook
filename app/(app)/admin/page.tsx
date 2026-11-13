@@ -16,6 +16,7 @@ import { ScheduleEditor } from '@/components/admin/schedule-editor'
 import { MembersManager } from '@/components/admin/members-manager'
 import { RunSchedule } from '@/components/admin/run-schedule'
 import { UpdatePanel } from '@/components/admin/update-panel'
+import { DataTransfer } from '@/components/admin/data-transfer'
 import { APP_VERSION, REPO_URL } from '@/lib/version'
 
 export const dynamic = 'force-dynamic'
@@ -128,6 +129,12 @@ export default async function AdminPage() {
           {t('admin.members', { n: members.length })}
         </h2>
         <MembersManager members={members} meId={me.id} />
+      </section>
+
+      <section className="mb-7">
+        <h2 className="mb-1 text-base font-semibold text-ink">{t('data.title')}</h2>
+        <p className="mb-3 text-sm text-secondary">{t('data.desc')}</p>
+        <DataTransfer />
       </section>
 
       <section>

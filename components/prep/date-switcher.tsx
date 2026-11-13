@@ -17,7 +17,7 @@ export function DateSwitcher({ date, today, yesterday }: { date: string; today: 
       type="button"
       onClick={() => go(d)}
       className={cn(
-        'mf-pressable h-9 rounded-full px-4 text-sm font-medium',
+        'mf-pressable h-9 rounded-[var(--radius-chip)] px-4 text-sm font-medium',
         date === d ? 'mf-accent-fill' : 'bg-trough text-secondary',
       )}
     >
@@ -33,7 +33,7 @@ export function DateSwitcher({ date, today, yesterday }: { date: string; today: 
         value={date}
         max={today}
         onChange={(e) => e.target.value && go(e.target.value)}
-        className="mf-inset h-9 min-w-0 flex-1 rounded-full px-3 text-sm text-ink outline-none"
+        className="mf-inset h-9 min-w-0 flex-1 rounded-[var(--radius-chip)] px-3 text-sm text-ink outline-none"
       />
     </div>
   )

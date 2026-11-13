@@ -201,7 +201,7 @@ export function ReviewSection({
                   <HalfStars value={scoreOf(r)} size={14} />
                   <span className="text-sm font-bold text-[#b3791f]">{fmtScore(scoreOf(r))}</span>
                   {r.mode === 'sci' && (
-                    <span className="rounded-full bg-[rgb(var(--mf-accent-soft)/0.15)] px-1.5 py-[1px] text-[10px] font-semibold text-accent">
+                    <span className="rounded-[var(--radius-chip)] bg-[rgb(var(--mf-accent-soft)/0.15)] px-1.5 py-[1px] text-[10px] font-semibold text-accent">
                       {t('score.sci')}
                     </span>
                   )}

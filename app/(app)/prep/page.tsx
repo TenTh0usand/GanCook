@@ -133,7 +133,7 @@ export default async function PrepPage({ searchParams }: { searchParams: Promise
                   {l.items.map((it) => (
                     <li key={it.id} className="flex items-center gap-2 text-sm">
                       <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${srcStyle[it.source].cls}`}
+                        className={`shrink-0 rounded-[var(--radius-chip)] px-2 py-0.5 text-[11px] font-semibold ${srcStyle[it.source].cls}`}
                         style={{ background: srcStyle[it.source].bg }}
                       >
                         {srcStyle[it.source].label}

@@ -62,7 +62,7 @@ export const PosterCard = React.forwardRef<
       <div className="relative flex h-full flex-col justify-between p-4">
         <span
           className={cn(
-            'w-fit rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
+            'w-fit rounded-[var(--radius-chip)] px-2.5 py-0.5 text-[11px] font-semibold',
             img ? 'bg-white/90 text-accent' : 'bg-surface text-accent',
           )}
         >

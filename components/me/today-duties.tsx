@@ -144,7 +144,7 @@ export function TodayDuties({
               {activeSlots.map((s) => (
                 <span
                   key={s}
-                  className="inline-flex items-center gap-2 rounded-full bg-trough px-3 py-1.5 text-xs font-medium text-ink"
+                  className="inline-flex items-center gap-2 rounded-[var(--radius-chip)] bg-trough px-3 py-1.5 text-xs font-medium text-ink"
                 >
                   {t('meal.' + s)}
                   <span className="flex gap-1">

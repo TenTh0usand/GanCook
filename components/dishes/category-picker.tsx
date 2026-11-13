@@ -77,7 +77,7 @@ function Chip({
       onClick={onClick}
       aria-pressed={on}
       className={cn(
-        'mf-pressable h-8 rounded-full px-3.5 text-[13px] font-medium transition-colors',
+        'mf-pressable h-8 rounded-[var(--radius-chip)] px-3.5 text-[13px] font-medium transition-colors',
         on ? 'bg-[rgb(var(--mf-accent-soft)/0.16)] text-accent' : 'bg-trough text-secondary',
       )}
     >

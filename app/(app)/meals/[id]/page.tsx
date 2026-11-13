@@ -165,7 +165,7 @@ export default async function MealDetailPage({
                   : t('order.cta')}
               </span>
             </span>
-            <span className="relative mf-accent-fill shrink-0 rounded-full px-4 py-2 text-sm font-bold">
+            <span className="relative mf-accent-fill shrink-0 rounded-[var(--radius-chip)] px-4 py-2 text-sm font-bold">
               {myOrders.length > 0 ? t('order.edit') : t('order.go')}
             </span>
           </Link>
@@ -214,7 +214,7 @@ export default async function MealDetailPage({
                 title={g.name}
                 subtitle={g.people.map((p) => p.name).join(t('common.listSep'))}
                 trailing={
-                  <span className="rounded-full bg-[rgb(var(--mf-accent-soft)/0.15)] px-2.5 py-1 text-sm font-semibold text-accent">
+                  <span className="rounded-[var(--radius-chip)] bg-[rgb(var(--mf-accent-soft)/0.15)] px-2.5 py-1 text-sm font-semibold text-accent">
                     ×{g.people.length}
                   </span>
                 }

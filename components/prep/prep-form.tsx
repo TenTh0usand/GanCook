@@ -192,7 +192,7 @@ export function PrepForm({
                         type="button"
                         onClick={() => update(r.key, { source: s })}
                         className={cn(
-                          'h-7 rounded-full px-2.5 text-xs font-semibold transition-colors',
+                          'h-7 rounded-[var(--radius-chip)] px-2.5 text-xs font-semibold transition-colors',
                           r.source === s
                             ? s === 'bought'
                               ? 'bg-[rgb(var(--mf-role-prep-soft)/0.18)] text-[var(--mf-role-prep)]'

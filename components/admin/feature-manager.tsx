@@ -90,11 +90,11 @@ export function FeatureManager({
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[15px] font-medium text-ink">{d?.name ?? '—'}</span>
                     {d?.archived && (
-                      <span className="shrink-0 rounded-full bg-trough px-1.5 py-[1px] text-[10px] font-semibold text-secondary/70">
+                      <span className="shrink-0 rounded-[var(--radius-chip)] bg-trough px-1.5 py-[1px] text-[10px] font-semibold text-secondary/70">
                         {t('dishes.archived')}
                       </span>
                     )}
-                    <span className={cn('shrink-0 rounded-full px-1.5 py-[1px] text-[10px] font-semibold', st.cls)}>{st.label}</span>
+                    <span className={cn('shrink-0 rounded-[var(--radius-chip)] px-1.5 py-[1px] text-[10px] font-semibold', st.cls)}>{st.label}</span>
                   </span>
                   <span className="mt-0.5 block truncate text-xs text-secondary">
                     {(f.title || t('menu.seasonal')) + ' · ' + range(f)}
@@ -224,7 +224,7 @@ function FeatureDialog({
                   type="button"
                   onClick={() => setDishId(d.id)}
                   className={cn(
-                    'mf-pressable h-8 rounded-full px-3 text-[13px] font-medium',
+                    'mf-pressable h-8 rounded-[var(--radius-chip)] px-3 text-[13px] font-medium',
                     d.id === dishId ? 'bg-accent-strong text-on-accent' : 'bg-trough text-secondary',
                   )}
                 >

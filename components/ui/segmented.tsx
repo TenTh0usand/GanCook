@@ -36,14 +36,14 @@ export function Segmented<T extends string>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={cn(
-              'relative flex-1 whitespace-nowrap rounded-full px-2.5 py-2 text-sm font-medium transition-colors',
+              'relative flex-1 whitespace-nowrap rounded-[calc(var(--radius-pill)-4px)] px-2.5 py-2 text-sm font-medium transition-colors',
               active ? 'text-accent' : 'text-secondary',
             )}
           >
             {active && (
               <motion.span
                 layoutId={layoutId}
-                className="mf-bump absolute inset-0 rounded-full"
+                className="mf-bump absolute inset-0 rounded-[calc(var(--radius-pill)-4px)]"
                 transition={{ type: 'spring', stiffness: 380, damping: 32 }}
               />
             )}

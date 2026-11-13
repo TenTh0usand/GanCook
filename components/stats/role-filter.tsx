@@ -99,7 +99,7 @@ export function RoleFilterBar() {
               type="button"
               onClick={() => toggle(k)}
               aria-pressed={on}
-              className="mf-pressable inline-flex h-8 items-center gap-1 rounded-full px-3 text-[13px] font-medium"
+              className="mf-pressable inline-flex h-8 items-center gap-1 rounded-[var(--radius-chip)] px-3 text-[13px] font-medium"
               style={
                 on
                   ? { background: roleTint(k), color: meta.color }

@@ -1,6 +1,6 @@
 # GanCook-10k 交接文档（给接手的 Agent / 开发者）
 
-> 最后更新：2026-11-12 · 对应版本：正式环境 **`v0.5.3`**（P1–P4 + 全项目体检清理 + 牛奶布艺轻量动效 + 晴空浅蓝双主题配色均已上线），开发环境同为 `main`；下一期 P5
+> 最后更新：2026-11-13 · 对应版本：正式环境 **`v0.6.0`**（P1–P4 + 三套主题配色 Lobe 极简（默认）/ 青菜绿 / 浅蓝色 + 数据导入导出），开发环境同为 `main`；下一期 P5
 >
 > 读完本文就能接着干。更完整的过程记录（每次改动、截图、决策原话）在用户的 Obsidian 单文件手册里（见 §2）。
 
@@ -84,8 +84,9 @@ GanCook-10k 新增 / 改动的关键文件：
 | `components/ui/half-stars.tsx`、`radar-chart.tsx` | 半星评分输入、六边形雷达图（手写 SVG） |
 | `app/(app)/stats`（`/wall` 跳转到这）、`app/(app)/prep` | 统计页、备菜页 |
 | `Dockerfile.prebuilt` + `.dockerignore` | 快速部署镜像（拷贝宿主机构建产物；**必须排除 `.next/standalone/data` 开发库**，支持 `gancook-base:node22` 离线底座） |
-| `lib/theme.ts` + `lib/theme-server.ts` + `components/theme-switch.tsx` | 主题配色切换（`green` 青菜绿 / `sky` 浅蓝色，Cookie 按设备记忆，SSR 零闪烁 + 客户端 0ms 切换） |
-| `app/globals.css` | 新增 `--mf-role-*` 角色色变量与 `:root[data-theme='sky']` 晴空浅蓝色板（均含暗色模式） |
+| `lib/theme.ts` + `lib/theme-server.ts` + `components/theme-switch.tsx` | 主题配色切换（`lobe` Lobe 极简〔默认，令牌取自 lobehub/lobe-mygo〕/ `green` 青菜绿 / `sky` 浅蓝色，Cookie 按设备记忆，SSR 零闪烁 + 客户端 0ms 切换） |
+| `lib/backup.ts` + `app/api/admin/export` + `app/api/admin/import` + `components/admin/data-transfer.tsx` | 数据导入导出（家庭管理）：`full` 全量 JSON（表原样行 + 图片 base64，导入 = 单事务整体替换，导入前自动快照到 `data/backups/before-import-*.json` 保留 5 份）；`dishes` 菜品库（导入 = 合并，同名跳过，分类按 id / 同名映射） |
+| `app/globals.css` | 设计令牌：颜色（`--mf-*`、角色色）+ 结构（`--mf-hairline` / `--mf-elev-1~3` / `--mf-on-accent` / `--radius-control/pill/chip/dock/field/list`）；三套主题各自覆盖（均含暗色）。组件默认圆角在 `@layer components`，组件上的 `rounded-*` 可覆盖 |
 
 ## 6. 数据模型（新增部分）
 
@@ -162,3 +163,4 @@ GanCook-10k 新增 / 改动的关键文件：
 | `v0.5.1` | 全项目代码体检与 Bug 修复、去上游化自维护清理、跨午夜 02:00 夜宵归属、PIN 登录限流 |
 | `v0.5.2` | 牛奶布艺卡片光影质感、弹窗进出场动画与小屏适配、纯 GPU 微交互与滑动指示器、NAS 离线镜像底座 |
 | `v0.5.3` | 新增清爽晴空「浅蓝色」主题配色（「我的 → 主题配色」一键 0ms 切换，按设备独立记忆，含夜间星夜深蓝适配） |
+| `v0.6.0` | Lobe 极简配色（默认）与 Lobe 组件形态（按钮 / 分段 / 标签小圆角、多层柔投影）；青菜绿 / 浅蓝色结构优化（暗色描边可见）；数据导入导出（全量备份恢复 + 菜品库分享合并） |

@@ -62,7 +62,7 @@ export default async function StatsPage() {
                       {CONTRIB_KINDS.map((k) => (
                         <span
                           key={k}
-                          className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                          className="rounded-[var(--radius-chip)] px-2 py-0.5 text-[11px] font-semibold"
                           style={{ background: roleTint(k, 0.15), color: ROLE_META[k].color }}
                         >
                           {t(`${ROLE_META[k].labelKey}.short`)} {m.totals[k]}

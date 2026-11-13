@@ -1,6 +1,6 @@
 {
   "name": "gancook",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "private": true,
   "description": "干饭厨子 GanCook-10k — 家庭点菜、备菜与厨房分工系统",
   "scripts": {
