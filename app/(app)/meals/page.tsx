@@ -11,21 +11,24 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { MealCard } from '@/components/meals/meal-card'
 import { CreateMealDialog } from '@/components/meals/create-meal-dialog'
 import { MealSearch } from '@/components/meals/meal-search'
+import { getOutingInfo } from '@/lib/outing'
 
 export const dynamic = 'force-dynamic'
 
 export default async function MealsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; q?: string }>
+  searchParams: Promise<{ date?: string; q?: string; kind?: string }>
 }) {
   await requireUser()
   const sp = await searchParams
   const qDate = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? '') ? sp.date! : ''
   const qText = (sp.q ?? '').trim().slice(0, 40)
+  const kindF = sp.kind === 'home' || sp.kind === 'out' ? sp.kind : 'all'
   const t = await getT()
   const tz = getSettings().timezone
-  const meals = listMeals()
+  const allMeals = listMeals()
+  const meals = allMeals.filter((m) => kindF === 'all' || m.kind === kindF)
   const mealIds = meals.map((m) => m.id)
 
   // 每个饭局的点菜人数
@@ -36,18 +39,19 @@ export default async function MealsPage({
   // GanCook-10k（P3）：卡片上显示全家平均分
   const scores = getMealScores(mealIds)
   const dishNames = getMealDishNames(mealIds)
+  const outings = getOutingInfo(meals.filter((m) => m.kind === 'out').map((m) => m.id))
   const cookLabel = (m: (typeof meals)[number]) =>
     cookNames.get(`${m.date}|${m.mealType}`)?.join(t('common.listSep')) ??
     (m.cookId ? members.get(m.cookId) : null)
 
   // 搜索：按日期（营业日）+ 关键词（菜名 / 饭局名 / 餐次名）
-  const searching = !!qDate || !!qText
+  const searching = !!qDate || !!qText || kindF !== 'all'
   const kw = qText.toLowerCase()
   const results = searching
     ? meals.filter((m) => {
         if (qDate && m.date !== qDate) return false
         if (!kw) return true
-        const hay = [m.title ?? '', t('meal.' + m.mealType), ...(dishNames.get(m.id) ?? [])]
+        const hay = [m.title ?? '', t('meal.' + m.mealType), outings.get(m.id)?.venueName ?? '', ...(dishNames.get(m.id) ?? [])]
         return hay.some((h) => h.toLowerCase().includes(kw))
       })
     : []
@@ -75,7 +79,7 @@ export default async function MealsPage({
     <>
       <PageHeader title={t('meals.title')} action={createBtn} />
 
-      {meals.length === 0 ? (
+      {allMeals.length === 0 ? (
         <EmptyState
           icon={<UtensilsCrossed />}
           title={t('meals.emptyTitle')}
@@ -91,7 +95,7 @@ export default async function MealsPage({
         />
       ) : (
         <div className="space-y-3">
-          <MealSearch date={qDate} q={qText} />
+          <MealSearch date={qDate} q={qText} kind={kindF} />
           {searching ? (
             <>
               <p className="mb-1 text-sm font-medium text-secondary">
@@ -105,6 +109,7 @@ export default async function MealsPage({
                   cookName={cookLabel(m)}
                   score={scores.get(m.id)?.avg ?? null}
                   participants={participants.get(m.id) ?? 0}
+                  outing={outings.get(m.id)}
                   dishes={dishNames.get(m.id)}
                 />
               ))}
@@ -119,6 +124,7 @@ export default async function MealsPage({
               cookName={cookLabel(m)}
               score={scores.get(m.id)?.avg ?? null}
               participants={participants.get(m.id) ?? 0}
+                  outing={outings.get(m.id)}
             />
           ))}
 
@@ -135,6 +141,7 @@ export default async function MealsPage({
                   cookName={cookLabel(m)}
                   score={scores.get(m.id)?.avg ?? null}
                   participants={participants.get(m.id) ?? 0}
+                  outing={outings.get(m.id)}
                   dishes={dishNames.get(m.id)}
                 />
               ))}

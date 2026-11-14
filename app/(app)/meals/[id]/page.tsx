@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ChevronLeft, Clock, Timer, ChefHat, Soup, UtensilsCrossed } from 'lucide-react'
-import { requireUser } from '@/lib/auth/user'
+import { ChevronLeft, Clock, Timer, ChefHat, Soup, Store, Wallet, Users } from 'lucide-react'
+import { requireUser, listMembers } from '@/lib/auth/user'
 import { getSettings } from '@/lib/settings'
 import { getMealDetail } from '@/lib/meals'
 import { getSlotRoles } from '@/lib/duties'
@@ -14,6 +14,9 @@ import { STATUS_META } from '@/components/meals/meal-card'
 import { MealControls } from '@/components/meals/meal-controls'
 import { MealRolesCard } from '@/components/meals/meal-roles-card'
 import { ReviewSection } from '@/components/meals/review-section'
+import { MealModeCard } from '@/components/meals/meal-mode-card'
+import { getOutingInfo, listVenueNames, fmtYuan } from '@/lib/outing'
+import { OUT_EMOJI } from '@/lib/roles'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,6 +65,15 @@ export default async function MealDetailPage({
 
   const status = STATUS_META[meal.status]
 
+  // GanCook-10k（P5）：外出
+  const isOut = meal.kind === 'out'
+  const outing = getOutingInfo([meal.id]).get(meal.id)!
+  const outSummary =
+    [outing.venueName, outing.perCents != null ? t('outing.perShort', { n: fmtYuan(outing.perCents) }) : null]
+      .filter(Boolean)
+      .join(' · ') || null
+  const members = listMembers().map((m) => ({ id: m.id, name: m.name, avatarPath: m.avatarPath }))
+
   return (
     <>
       <div className="mb-4 flex items-center justify-between">
@@ -79,9 +91,9 @@ export default async function MealDetailPage({
       <div className="mf-raised mb-4 p-5">
         <div className="relative flex items-center gap-3">
           <div
-            className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl ${status.tile}`}
+            className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl ${isOut ? 'bg-[rgb(var(--mf-role-out-soft)/0.16)]' : status.tile}`}
           >
-            {MEAL_EMOJI[meal.mealType]}
+            {isOut ? (outing.category ? OUT_EMOJI[outing.category] : '🏪') : MEAL_EMOJI[meal.mealType]}
           </div>
           <div>
             <h1 className="tracking-title text-xl font-bold text-ink">
@@ -98,6 +110,50 @@ export default async function MealDetailPage({
           </div>
         </div>
 
+        {isOut ? (
+          <div className="relative mt-4 flex flex-col gap-2 border-t border-black/[0.04] pt-4 text-sm">
+            <div className="flex items-center gap-2 text-ink">
+              <Store className="h-4 w-4 text-[var(--mf-role-out)]" />
+              <span className="font-medium">{outing.venueName ?? t('outing.label')}</span>
+              {outing.category && (
+                <span className="text-secondary">
+                  {OUT_EMOJI[outing.category]} {t(`outing.cat.${outing.category}`)}
+                </span>
+              )}
+            </div>
+            {(outing.totalCents != null || outing.perCents != null) && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-secondary">
+                <Wallet className="h-4 w-4" />
+                {outing.totalCents != null && <span>{t('outing.totalShort', { n: fmtYuan(outing.totalCents) })}</span>}
+                {outing.perCents != null && (
+                  <span className="font-semibold text-[var(--mf-role-out)]">
+                    {t('outing.perShort', { n: fmtYuan(outing.perCents) })}
+                  </span>
+                )}
+                {outing.paidCents != null && outing.paidCents !== outing.totalCents && (
+                  <span>{t('outing.paidShort', { n: fmtYuan(outing.paidCents) })}</span>
+                )}
+              </div>
+            )}
+            {outing.companions.length > 0 && (
+              <div className="flex items-center gap-2 text-ink">
+                <Users className="h-4 w-4 text-secondary" />
+                <span className="flex -space-x-1.5">
+                  {outing.companions.map((c) => (
+                    <Avatar
+                      key={c.id}
+                      name={c.name}
+                      src={c.avatarPath ? `/api/uploads/${c.avatarPath}` : null}
+                      size={22}
+                      className="ring-2 ring-[var(--mf-surface)]"
+                    />
+                  ))}
+                </span>
+                {outing.companions.map((c) => c.name).join(t('common.listSep'))}
+              </div>
+            )}
+          </div>
+        ) : (
         <div className="relative mt-4 flex flex-col gap-2 border-t border-black/[0.04] pt-4 text-sm">
           <div className="flex items-center gap-2 text-secondary">
             <Timer className="h-4 w-4" />
@@ -131,6 +187,7 @@ export default async function MealDetailPage({
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* 控制 */}
@@ -141,38 +198,35 @@ export default async function MealDetailPage({
           othersCooking={cooks.some((c) => c.userId !== me.id)}
           canManage={canManage}
           canDelete={canDelete}
+          isOut={isOut}
         />
       </div>
 
       {/* 点菜：GanCook-10k（P2）改为进入全屏点菜页 */}
-      {orderingOpen && (
-        <section className="mb-6">
-          <Link
-            href={`/meals/${meal.id}/order`}
-            className="mf-tonal mf-pressable flex items-center gap-3 p-4"
-          >
-            <span className="mf-chip relative bg-surface">
-              <UtensilsCrossed className="h-[18px] w-[18px]" />
-            </span>
-            <span className="relative min-w-0 flex-1">
-              <span className="block text-[15px] font-semibold text-ink">
-                {t('detail.pick')}
-                {myOrders.length > 0 && t('detail.picked', { n: myOrders.length })}
-              </span>
-              <span className="mt-0.5 block truncate text-xs text-secondary">
-                {myOrders.length > 0
-                  ? myOrders.map((o) => o.dishName).join(t('common.listSep'))
-                  : t('order.cta')}
-              </span>
-            </span>
-            <span className="relative mf-accent-fill shrink-0 rounded-[var(--radius-chip)] px-4 py-2 text-sm font-bold">
-              {myOrders.length > 0 ? t('order.edit') : t('order.go')}
-            </span>
-          </Link>
-        </section>
+      {meal.status !== 'cancelled' && (
+        <MealModeCard
+          mealId={meal.id}
+          kind={meal.kind}
+          orderingOpen={orderingOpen}
+          myOrderNames={myOrders.map((o) => o.dishName)}
+          totalOrders={orders.length}
+          outSummary={outSummary}
+          outing={{
+            venueName: outing.venueName,
+            category: outing.category,
+            totalCents: outing.totalCents,
+            headcount: outing.headcount,
+            paidCents: outing.paidCents,
+            companionIds: outing.companions.map((c) => c.id),
+          }}
+          venues={listVenueNames()}
+          members={members}
+          meId={me.id}
+        />
       )}
 
       {/* 大家点了什么 */}
+      {!isOut && (
       <section>
         <h2 className="mb-3 text-base font-semibold text-ink">
           {t('detail.who')}
@@ -223,9 +277,10 @@ export default async function MealDetailPage({
           </List>
         )}
       </section>
+      )}
 
       {/* GanCook-10k：这顿的分工（备菜 / 做菜 / 善后）——放在点菜之后，不挡点菜 */}
-      {meal.status !== 'cancelled' && (
+      {meal.status !== 'cancelled' && !isOut && (
         <div className="mt-6">
           <MealRolesCard
             date={meal.date}

@@ -100,6 +100,8 @@ export function getContributions(): {
   const orderRows = db
     .select({ userId: orders.userId, mealId: orders.mealId, createdAt: orders.createdAt })
     .from(orders)
+    .innerJoin(meals, eq(orders.mealId, meals.id))
+    .where(eq(meals.kind, 'home')) // P5：外出不算点菜贡献
     .all()
   for (const r of orderRows) {
     const day = dayjs.unix(r.createdAt).tz(tz).format('YYYY-MM-DD')

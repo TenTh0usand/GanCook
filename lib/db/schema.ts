@@ -15,7 +15,7 @@ import {
   unique,
   index,
 } from 'drizzle-orm/sqlite-core'
-import { MEAL_TYPES } from '../roles'
+import { MEAL_TYPES, OUT_CATEGORIES } from '../roles'
 import type { ScoreDim } from '../scoring'
 
 const now = sql`(unixepoch())`
@@ -98,9 +98,17 @@ export const meals = sqliteTable(
       onDelete: 'set null',
     }),
     createdAt: integer('created_at').notNull().default(now),
+    // GanCook-10k（P5）：在家 / 外出。外出时下面几项都可空（金额单位：分）
+    kind: text('kind', { enum: ['home', 'out'] }).notNull().default('home'),
+    outCategory: text('out_category', { enum: OUT_CATEGORIES }),
+    venueId: text('venue_id').references(() => venues.id, { onDelete: 'set null' }),
+    totalCents: integer('total_cents'),
+    headcount: integer('headcount'),
+    paidCents: integer('paid_cents'),
   },
   (t) => [
     index('idx_meals_status').on(t.status),
+    index('idx_meals_kind').on(t.kind),
     index('idx_meals_date').on(t.date),
     index('idx_meals_schedule').on(t.scheduleId),
   ],
@@ -330,3 +338,30 @@ export const prepItems = sqliteTable(
   },
   (t) => [index('idx_prep_items_log').on(t.logId)],
 )
+
+// ── GanCook-10k（P5）：外出 / 探店 ──
+/** 店铺（只存名字和区域，用于联想和「常去的店」统计） */
+export const venues = sqliteTable('venues', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull().unique(),
+  area: text('area'),
+  createdAt: integer('created_at').notNull().default(now),
+})
+
+/** 外出同行的家人 */
+export const mealCompanions = sqliteTable(
+  'meal_companions',
+  {
+    mealId: text('meal_id')
+      .notNull()
+      .references(() => meals.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+  },
+  (t) => [unique('uniq_meal_companion').on(t.mealId, t.userId), index('idx_meal_companions_meal').on(t.mealId)],
+)
+
+export type Venue = typeof venues.$inferSelect

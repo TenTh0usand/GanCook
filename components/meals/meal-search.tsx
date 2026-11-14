@@ -4,17 +4,21 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { CalendarDays, Search, X } from 'lucide-react'
 import { useT } from '@/components/i18n-provider'
+import { Segmented } from '@/components/ui/segmented'
+
+type KindFilter = 'all' | 'home' | 'out'
 
 /** 饭局页 · 历史搜索：按日期定位 + 按菜名 / 饭局名搜（写入 URL ?date=&q=，刷新可保留） */
-export function MealSearch({ date, q }: { date: string; q: string }) {
+export function MealSearch({ date, q, kind = 'all' }: { date: string; q: string; kind?: KindFilter }) {
   const t = useT()
   const router = useRouter()
   const pathname = usePathname()
   const [text, setText] = useState(q)
   const first = useRef(true)
 
-  const go = (nextDate: string, nextQ: string) => {
+  const go = (nextDate: string, nextQ: string, nextKind: KindFilter = kind) => {
     const sp = new URLSearchParams()
+    if (nextKind !== 'all') sp.set('kind', nextKind)
     if (nextDate) sp.set('date', nextDate)
     if (nextQ.trim()) sp.set('q', nextQ.trim())
     const qs = sp.toString()
@@ -35,7 +39,18 @@ export function MealSearch({ date, q }: { date: string; q: string }) {
   const active = !!date || !!text.trim()
 
   return (
-    <div className="mb-4 flex gap-2">
+    <div className="mb-4 space-y-2.5">
+    <Segmented<KindFilter>
+      value={kind}
+      onChange={(k) => go(date, text, k)}
+      layoutId="meal-kind-filter"
+      options={[
+        { value: 'all', label: t('meals.filterAll') },
+        { value: 'home', label: t('meals.filterHome') },
+        { value: 'out', label: t('meals.filterOut') },
+      ]}
+    />
+    <div className="flex gap-2">
       <label className="mf-inset flex h-10 min-w-0 flex-1 items-center gap-2 px-3">
         <Search className="h-4 w-4 shrink-0 text-secondary" />
         <input
@@ -64,7 +79,7 @@ export function MealSearch({ date, q }: { date: string; q: string }) {
           type="button"
           onClick={() => {
             setText('')
-            go('', '')
+            go('', '', kind)
           }}
           className="mf-pressable flex h-10 shrink-0 items-center gap-1 rounded-[var(--radius-control)] px-2.5 text-sm text-secondary hover:text-ink"
         >
@@ -72,6 +87,7 @@ export function MealSearch({ date, q }: { date: string; q: string }) {
           {t('meals.searchClear')}
         </button>
       )}
+    </div>
     </div>
   )
 }

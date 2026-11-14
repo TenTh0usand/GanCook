@@ -94,7 +94,7 @@ export function getCookStats(): Map<string, CookStat> {
     .selectDistinct({ dishId: orders.dishId, mealId: orders.mealId, date: meals.date })
     .from(orders)
     .innerJoin(meals, eq(orders.mealId, meals.id))
-    .where(eq(meals.status, 'done'))
+    .where(and(eq(meals.status, 'done'), eq(meals.kind, 'home')))
     .all()
   for (const r of mealRows) bump(r.dishId, r.date)
 

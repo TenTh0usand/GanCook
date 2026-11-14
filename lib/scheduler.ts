@@ -106,6 +106,7 @@ export function tick(): TickResult {
     const purged = db.run(sql`
       DELETE FROM meals
       WHERE is_auto = 1
+        AND kind = 'home'
         AND status IN ('done', 'cancelled')
         AND cook_id IS NULL
         AND dining_time <= ${now - PURGE_EMPTY_AUTO_AFTER_SEC}

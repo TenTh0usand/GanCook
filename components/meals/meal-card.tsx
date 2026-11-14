@@ -1,11 +1,13 @@
 import Link from 'next/link'
-import { Clock, Users, ChefHat, ChevronRight, Star } from 'lucide-react'
+import { Clock, Users, ChefHat, ChevronRight, Star, Store } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { TIMEZONE } from '@/lib/env'
 import { MEAL_EMOJI, fmtTime, fmtDateLabel } from '@/lib/time'
 import { getT } from '@/lib/i18n/server'
 import { cn } from '@/lib/utils'
 import type { Meal } from '@/lib/db/schema'
+import { OUT_EMOJI, type OutCategory } from '@/lib/roles'
+import { fmtYuan } from '@/lib/outing'
 
 export const STATUS_META: Record<
   Meal['status'],
@@ -32,6 +34,7 @@ export async function MealCard({
   tz = TIMEZONE,
   score,
   dishes,
+  outing,
 }: {
   meal: Meal
   cookName?: string | null
@@ -41,10 +44,13 @@ export async function MealCard({
   score?: number | null
   /** 这顿点了哪些菜（历史 / 搜索结果里显示一行） */
   dishes?: string[]
+  /** GanCook-10k（P5）：外出信息 */
+  outing?: { venueName: string | null; category: OutCategory | null; perCents: number | null } | null
 }) {
   const t = await getT()
   const status = STATUS_META[meal.status]
   const fallbackTitle = t('meal.' + meal.mealType)
+  const isOut = meal.kind === 'out'
   return (
     <Link
       href={`/meals/${meal.id}`}
@@ -53,16 +59,16 @@ export async function MealCard({
       <div
         className={cn(
           'flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[var(--radius-field)] text-[26px]',
-          status.tile,
+          isOut ? 'bg-[rgb(var(--mf-role-out-soft)/0.16)]' : status.tile,
         )}
       >
-        {MEAL_EMOJI[meal.mealType]}
+        {isOut ? (outing?.category ? OUT_EMOJI[outing.category] : '🏪') : MEAL_EMOJI[meal.mealType]}
       </div>
 
       <div className="relative min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-semibold tracking-title text-ink">
-            {meal.title || fallbackTitle}
+            {(isOut && outing?.venueName) || meal.title || fallbackTitle}
           </span>
           {meal.isAuto && <Badge tone="auto">{t('mealcard.auto')}</Badge>}
         </div>
@@ -71,20 +77,27 @@ export async function MealCard({
             <Clock className="h-3.5 w-3.5" />
             {fmtDateLabel(meal.date, tz, t)} {fmtTime(meal.diningTime, tz)}
           </span>
-          {typeof participants === 'number' && participants > 0 && (
+          {isOut && (
+            <span className="inline-flex items-center gap-1 font-medium text-[var(--mf-role-out)]">
+              <Store className="h-3.5 w-3.5" />
+              {t('outing.label')}
+              {outing?.perCents != null && ` · ${t('outing.perShort', { n: fmtYuan(outing.perCents) })}`}
+            </span>
+          )}
+          {!isOut && typeof participants === 'number' && participants > 0 && (
             <span className="inline-flex items-center gap-1">
               <Users className="h-3.5 w-3.5" />
               {t('mealcard.people', { n: participants })}
             </span>
           )}
-          {cookName && (
+          {!isOut && cookName && (
             <span className="inline-flex items-center gap-1 text-accent">
               <ChefHat className="h-3.5 w-3.5" />
               {cookName}
             </span>
           )}
         </div>
-        {dishes && dishes.length > 0 && (
+        {!isOut && dishes && dishes.length > 0 && (
           <p className="mt-1 truncate text-xs text-ink/80">{dishes.join(t('common.listSep'))}</p>
         )}
       </div>

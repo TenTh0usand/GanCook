@@ -90,3 +90,17 @@ export function isMealType(v: unknown): v is MealType {
 export function isDutyKind(v: unknown): v is DutyKind {
   return typeof v === 'string' && (DUTY_KINDS as readonly string[]).includes(v)
 }
+
+// ── GanCook-10k · P5 外出 / 探店 ──
+/** 外出分类：正餐 / 饮品 / 甜点 / 小吃 */
+export const OUT_CATEGORIES = ['meal', 'drink', 'dessert', 'snack'] as const
+export type OutCategory = (typeof OUT_CATEGORIES)[number]
+export const OUT_EMOJI: Record<OutCategory, string> = {
+  meal: '🍜',
+  drink: '🧋',
+  dessert: '🍰',
+  snack: '🍢',
+}
+export function isOutCategory(v: unknown): v is OutCategory {
+  return typeof v === 'string' && (OUT_CATEGORIES as readonly string[]).includes(v)
+}

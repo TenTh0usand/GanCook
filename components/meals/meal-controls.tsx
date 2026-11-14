@@ -14,6 +14,7 @@ export function MealControls({
   othersCooking = false,
   canManage,
   canDelete,
+  isOut = false,
 }: {
   meal: Meal
   isCook: boolean
@@ -21,6 +22,8 @@ export function MealControls({
   othersCooking?: boolean
   canManage: boolean
   canDelete: boolean
+  /** GanCook-10k（P5）：外出时不需要做饭相关按钮 */
+  isOut?: boolean
 }) {
   const router = useRouter()
   const t = useT()
@@ -42,7 +45,7 @@ export function MealControls({
 
   return (
     <div className="space-y-2.5">
-      {meal.status !== 'cancelled' && meal.status !== 'done' && (
+      {!isOut && meal.status !== 'cancelled' && meal.status !== 'done' && (
         <Button
           variant={isCook ? 'secondary' : 'primary'}
           className="w-full"
@@ -64,10 +67,10 @@ export function MealControls({
           <Button
             variant="trough"
             className="flex-1"
-            onClick={() => run(() => setMealStatus(meal.id, 'cooking'))}
+            onClick={() => run(() => setMealStatus(meal.id, isOut ? 'done' : 'cooking'))}
           >
-            <CookingPot className="h-4 w-4" />
-            {t('controls.startCooking')}
+            {isOut ? <CheckCircle2 className="h-4 w-4" /> : <CookingPot className="h-4 w-4" />}
+            {isOut ? t('controls.finish') : t('controls.startCooking')}
           </Button>
           <Button
             variant="trough"
