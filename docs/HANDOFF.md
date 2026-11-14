@@ -1,6 +1,6 @@
 # GanCook-10k 交接文档（给接手的 Agent / 开发者）
 
-> 最后更新：2026-11-13 · 对应版本：正式环境 **`v0.6.0`**（P1–P4 + 三套主题配色 Lobe 极简（默认）/ 青菜绿 / 浅蓝色 + 数据导入导出），开发环境同为 `main`；下一期 P5
+> 最后更新：2026-11-14 · 对应版本：正式环境 **`v0.7.0`**（P1–P4 + 三套主题 + 数据导入导出 + 历史饭局搜索 / 空自动饭局清理 + P5 第一步「在家 ⇄ 外出」），开发环境同为 `main`；下一步 P5 剩余（外出单品、店铺累计、外出足迹 / 花费统计）
 >
 > 读完本文就能接着干。更完整的过程记录（每次改动、截图、决策原话）在用户的 Obsidian 单文件手册里（见 §2）。
 
@@ -97,6 +97,7 @@ GanCook-10k 新增 / 改动的关键文件：
 | `0002_menu` | `dish_categories`（预置 7 大类 + 12 细类，parent_id 空 = 大类，`other` 固定且不可删）、`dish_cook_logs`（手动「我做过」）、`menu_features`（本季推荐）；`dishes` 加 `category` / `subcategory` / `pinned`；按标签和菜名自动猜大类 |
 | `0003_scoring` | `reviews` 加 `score_x10`（分数 ×10 整数）、`mode`（simple/sci）、`dims`（六维 JSON）；`rating` 保留同步 |
 | `0004_prep` | `prep_logs`（user, date, slot, note, image）+ `prep_items`（name, source bought/fridge/other, qty 自由文字, price_cents） |
+| `0005_outing` | `meals` 加 `kind`（home/out，默认 home）、`out_category`（meal/drink/dessert/snack）、`venue_id`、`total_cents`、`headcount`、`paid_cents`；新表 `venues`（店名唯一）、`meal_companions`（同行家人）。外出：不算点菜贡献、不算做过次数、不进空饭局清理 |
 
 约定：时间 unix 秒；日期 `YYYY-MM-DD`（家庭时区）；金额存「分」；分数存 ×10；**只加不删字段**；SQLite 的 text 枚举没有 CHECK 约束，扩展枚举不用迁移。
 
@@ -164,3 +165,4 @@ GanCook-10k 新增 / 改动的关键文件：
 | `v0.5.2` | 牛奶布艺卡片光影质感、弹窗进出场动画与小屏适配、纯 GPU 微交互与滑动指示器、NAS 离线镜像底座 |
 | `v0.5.3` | 新增清爽晴空「浅蓝色」主题配色（「我的 → 主题配色」一键 0ms 切换，按设备独立记忆，含夜间星夜深蓝适配） |
 | `v0.6.0` | Lobe 极简配色（默认）与 Lobe 组件形态（按钮 / 分段 / 标签小圆角、多层柔投影）；青菜绿 / 浅蓝色结构优化（暗色描边可见）；数据导入导出（全量备份恢复 + 菜品库分享合并） |
+| `v0.7.0` | 历史饭局按日期 / 菜名 / 店名搜索 + 全部/在家/外出筛选；空的自动饭局用餐 3 天后自动清理；饭局详情点图标切换「在家 ⇄ 出去吃」（确认弹窗 + 撒钱 / 省钱特效）+ 记一笔外出（店名联想、分类、总价/人数→人均、我家实付、同行） |
