@@ -138,6 +138,18 @@ Checks: `npx tsc --noEmit -p .`, `npm run lint`, and `npm run build`.
 
 ---
 
+## 🗺️ Roadmap
+
+- [ ] **Meal Share Cards (Moments / Xiaohongshu)**: One-tap export of a meal's cover photos, dishes or outing spend, chores, and radar/star ratings as shareable social cards
+- [ ] **Agent-Driven Capabilities** (*No brittle format-specific parsers inside the app — feed Markdown, HTML, etc. directly to AI Agents interacting via open APIs & GanCook's standard import/export*):
+  - [ ] **AI Menu & Recipe Curation**: Design printable/shareable menus spanning **5-star hotel / Michelin / Black Pearl** fine-dining aesthetics to cozy **street-stall / bistro** menus
+  - [ ] **Multi-Format Recipe Import**: Drop `.md`, `.html`, or web clippings to an Agent to extract and import into GanCook
+  - [ ] **Today's Meal AI Video Recap**: Template-driven short video recap of a meal's photos and highlights powered by AI
+- [ ] **Outing Footprint, Spend Charts & Ingredient Price Tracker** (P5 remaining / P6)
+- [ ] **Fridge Inventory Sync, Auto Grocery Lists & Push Notifications**
+
+---
+
 ## 📄 License
 
 [MIT](LICENSE) · Forked from [Gloridust/GanCook](https://github.com/Gloridust/GanCook) · Made with ❤️ for family dinners.
