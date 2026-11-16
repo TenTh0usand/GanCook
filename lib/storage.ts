@@ -125,11 +125,16 @@ const client = (c: Live) =>
   new AwsClient({ accessKeyId: c.accessKeyId, secretAccessKey: c.secret, service: 's3', region: c.regionResolved })
 
 async function s3Put(c: Live, k: string, body: Buffer, type: string) {
-  const res = await client(c).fetch(objectUrl(c, k), {
+  // 注意：不能直接用 client.fetch() —— 它把签好名的 Request 交给 fetch，较大的文件会变成
+  // 「分块传输」而没有 Content-Length，R2 会返回 411 MissingContentLength（小测试文件不会触发）。
+  // 所以先签名，再用原始字节发送，fetch 会自动带上 Content-Length。
+  const bytes = new Uint8Array(body)
+  const signed = await client(c).sign(objectUrl(c, k), {
     method: 'PUT',
-    body: new Uint8Array(body),
+    body: bytes,
     headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=31536000, immutable' },
   })
+  const res = await fetch(signed.url, { method: 'PUT', headers: signed.headers, body: bytes, cache: 'no-store' })
   if (!res.ok) throw new Error(`S3 PUT ${res.status}: ${(await res.text()).slice(0, 200)}`)
 }
 
@@ -199,7 +204,8 @@ export async function testS3(c: S3Config, secret: string): Promise<{ ok: true } 
   const l = live(c, secret)
   if (!l) return { ok: false, step: 'config', detail: '' }
   const k = `.gancook-test/${Date.now()}.txt`
-  const body = Buffer.from('gancook storage test')
+  // 用约 300KB 的测试文件（和真实照片一样走「较大文件」的上传路径，小文件测不出 Content-Length 之类的问题）
+  const body = Buffer.alloc(300 * 1024, 'gancook storage test ')
   try {
     await s3Put(l, k, body, 'text/plain')
   } catch (e) {
@@ -207,7 +213,7 @@ export async function testS3(c: S3Config, secret: string): Promise<{ ok: true } 
   }
   try {
     const r = await client(l).fetch(objectUrl(l, k))
-    if (!r.ok || (await r.text()) !== 'gancook storage test') throw new Error(`HTTP ${r.status}`)
+    if (!r.ok || (await r.arrayBuffer()).byteLength !== body.length) throw new Error(`HTTP ${r.status}`)
   } catch (e) {
     return { ok: false, step: 'get', detail: errText(e) }
   }
