@@ -1,6 +1,6 @@
 # GanCook-10k 交接文档（给接手的 Agent / 开发者）
 
-> 最后更新：2026-11-14 · 对应版本：正式环境 **`v0.7.0`**（P1–P4 + 三套主题 + 数据导入导出 + 历史饭局搜索 / 空自动饭局清理 + P5 第一步「在家 ⇄ 外出」），开发环境同为 `main`；下一步 P5 剩余（外出单品、店铺累计、外出足迹 / 花费统计）
+> 最后更新：2026-11-16 · 对应版本：正式环境 **`v0.8.0`**（P1–P4 + 三套主题 + 数据导入导出 + 历史搜索 / 空饭局清理 + 在家⇄外出 + 本餐照片 / 评价传图 / 封面投票 + 本机 / S3·R2 图片存储 + 点菜截止后调），开发环境同为 `main`；下一步 P5 剩余（外出单品、店铺累计、外出足迹 / 花费统计）
 >
 > 读完本文就能接着干。更完整的过程记录（每次改动、截图、决策原话）在用户的 Obsidian 单文件手册里（见 §2）。
 
@@ -83,6 +83,8 @@ GanCook-10k 新增 / 改动的关键文件：
 | `components/menu/order-menu.tsx` + `app/(app)/meals/[id]/order` | 全屏点菜页 |
 | `components/ui/half-stars.tsx`、`radar-chart.tsx` | 半星评分输入、六边形雷达图（手写 SVG） |
 | `app/(app)/stats`（`/wall` 跳转到这）、`app/(app)/prep` | 统计页、备菜页 |
+| `lib/storage.ts` + `lib/images.ts` + `app/api/uploads/[...path]` | 图片存储：`putFile` / `removeFile` / `serveFile` 按路径前缀（`s3/`）区分本机与 S3；R2 只需 Account ID；Secret 存 settings `storage.s3.secret`（AES-256-GCM，导出时剔除，恢复时保留本机配置）；签名库 `aws4fetch` |
+| `lib/photos.ts` + `app/api/meals/[id]/photos` + `components/photos/*` + `lib/compress-image.ts` | 照片：上传（每顿 60、评价每人 6）、照片墙（无本餐照片时回退评价图）、全屏查看、投票（`getMealCovers`：得票最多 → 平票取最先达到 → 无票按饭局 ID 固定随机）。注意：家里是 http 访问，客户端不能用 `crypto.randomUUID()` |
 | `Dockerfile.prebuilt` + `.dockerignore` | 快速部署镜像（拷贝宿主机构建产物；**必须排除 `.next/standalone/data` 开发库**，支持 `gancook-base:node22` 离线底座） |
 | `lib/theme.ts` + `lib/theme-server.ts` + `components/theme-switch.tsx` | 主题配色切换（`lobe` Lobe 极简〔默认，令牌取自 lobehub/lobe-mygo〕/ `green` 青菜绿 / `sky` 浅蓝色，Cookie 按设备记忆，SSR 零闪烁 + 客户端 0ms 切换） |
 | `lib/backup.ts` + `app/api/admin/export` + `app/api/admin/import` + `components/admin/data-transfer.tsx` | 数据导入导出（家庭管理）：`full` 全量 JSON（表原样行 + 图片 base64，导入 = 单事务整体替换，导入前自动快照到 `data/backups/before-import-*.json` 保留 5 份）；`dishes` 菜品库（导入 = 合并，同名跳过，分类按 id / 同名映射） |
@@ -98,6 +100,7 @@ GanCook-10k 新增 / 改动的关键文件：
 | `0003_scoring` | `reviews` 加 `score_x10`（分数 ×10 整数）、`mode`（simple/sci）、`dims`（六维 JSON）；`rating` 保留同步 |
 | `0004_prep` | `prep_logs`（user, date, slot, note, image）+ `prep_items`（name, source bought/fridge/other, qty 自由文字, price_cents） |
 | `0005_outing` | `meals` 加 `kind`（home/out，默认 home）、`out_category`（meal/drink/dessert/snack）、`venue_id`、`total_cents`、`headcount`、`paid_cents`；新表 `venues`（店名唯一）、`meal_companions`（同行家人）。外出：不算点菜贡献、不算做过次数、不进空饭局清理 |
+| `0006_photos` | 新表 `meal_photos`（source meal/review、path/thumb_path、宽高；本机路径 `photos/x.webp`，S3 路径以 `s3/` 开头）、`meal_photo_votes`（每人每顿一票）；`meal_schedules` 加 `deadline_time`（截止时刻，可晚于用餐；凌晨 2 点前算次日）；数据迁移：规则按餐次改为 10:30/14:30/21:30/17:30/01:30，点菜中饭局截止顺延（按 UTC+8） |
 
 约定：时间 unix 秒；日期 `YYYY-MM-DD`（家庭时区）；金额存「分」；分数存 ×10；**只加不删字段**；SQLite 的 text 枚举没有 CHECK 约束，扩展枚举不用迁移。
 
@@ -166,3 +169,4 @@ GanCook-10k 新增 / 改动的关键文件：
 | `v0.5.3` | 新增清爽晴空「浅蓝色」主题配色（「我的 → 主题配色」一键 0ms 切换，按设备独立记忆，含夜间星夜深蓝适配） |
 | `v0.6.0` | Lobe 极简配色（默认）与 Lobe 组件形态（按钮 / 分段 / 标签小圆角、多层柔投影）；青菜绿 / 浅蓝色结构优化（暗色描边可见）；数据导入导出（全量备份恢复 + 菜品库分享合并） |
 | `v0.7.0` | 历史饭局按日期 / 菜名 / 店名搜索 + 全部/在家/外出筛选；空的自动饭局用餐 3 天后自动清理；饭局详情点图标切换「在家 ⇄ 出去吃」（确认弹窗 + 撒钱 / 省钱特效）+ 记一笔外出（店名联想、分类、总价/人数→人均、我家实付、同行） |
+| `v0.8.0` | 本餐照片（拍照 / 相册，手机端压到 ≤2MB，服务器去 EXIF + 缩略图）、评价传图（≤6）、「哪道菜最能代表这顿饭？」投票 → 列表封面；图片存储本机 / S3·R2（家庭管理配置、测试连接、Secret 加密）；默认点菜截止后调（早 10:30 / 午 14:30 / 晚 21:30 / 加餐 17:30 / 夜宵 01:30），截止晚于用餐时直接完成；全家都能手动结束点菜 |
