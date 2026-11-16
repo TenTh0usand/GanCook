@@ -1,8 +1,5 @@
-import { readFile } from 'node:fs/promises'
-import { extname, resolve, sep } from 'node:path'
-import { UPLOAD_DIR } from '@/lib/env'
-
-const UPLOAD_ROOT = resolve(UPLOAD_DIR)
+import { extname } from 'node:path'
+import { serveFile } from '@/lib/storage'
 
 const TYPES: Record<string, string> = {
   '.webp': 'image/webp',
@@ -12,26 +9,24 @@ const TYPES: Record<string, string> = {
   '.gif': 'image/gif',
 }
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ path: string[] }> },
-) {
+/**
+ * 图片读取：本机文件直接返回；S3 / R2 对象（路径以 s3/ 开头）配置了公开域名时 302 到 CDN，否则由 NAS 中转。
+ * 路径越界（目录穿越）一律 404。
+ */
+export async function GET(_req: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params
-  // 防目录穿越：严格限制在 UPLOAD_DIR 子路径内
-  const target = resolve(UPLOAD_ROOT, ...path)
-  if (!target.startsWith(UPLOAD_ROOT + sep)) {
-    return new Response('Not found', { status: 404 })
-  }
-  try {
-    const data = await readFile(target)
-    const type = TYPES[extname(target).toLowerCase()] || 'application/octet-stream'
-    return new Response(new Uint8Array(data), {
-      headers: {
-        'Content-Type': type,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
+  if (path.some((seg) => seg === '..' || seg.includes('\\'))) return new Response('Not found', { status: 404 })
+  const rel = path.join('/')
+  const type = TYPES[extname(rel).toLowerCase()] || 'application/octet-stream'
+  const res = await serveFile(rel, type).catch(() => null)
+  if (!res) return new Response('Not found', { status: 404 })
+  if (res.kind === 'redirect') {
+    return new Response(null, {
+      status: 302,
+      headers: { Location: res.url, 'Cache-Control': 'public, max-age=86400' },
     })
-  } catch {
-    return new Response('Not found', { status: 404 })
   }
+  return new Response(res.body as BodyInit, {
+    headers: { 'Content-Type': res.type, 'Cache-Control': 'public, max-age=31536000, immutable' },
+  })
 }

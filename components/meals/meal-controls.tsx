@@ -62,7 +62,7 @@ export function MealControls({
         </Button>
       )}
 
-      {canManage && meal.status === 'ordering' && (
+      {meal.status === 'ordering' && (
         <div className="flex gap-2">
           <Button
             variant="trough"
@@ -72,6 +72,7 @@ export function MealControls({
             {isOut ? <CheckCircle2 className="h-4 w-4" /> : <CookingPot className="h-4 w-4" />}
             {isOut ? t('controls.finish') : t('controls.startCooking')}
           </Button>
+          {canManage && (
           <Button
             variant="trough"
             className="flex-1"
@@ -80,10 +81,11 @@ export function MealControls({
             <X className="h-4 w-4" />
             {t('controls.cancelMeal')}
           </Button>
+          )}
         </div>
       )}
 
-      {canManage && meal.status === 'cooking' && (
+      {meal.status === 'cooking' && (
         <Button
           variant="trough"
           className="w-full"

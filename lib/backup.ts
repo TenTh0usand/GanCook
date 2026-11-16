@@ -36,7 +36,9 @@ export type ImportSummary = {
   skipped?: number
 }
 
-const IMAGE_PATH_RE = /^(dishes|avatars|posters|prep)\/[A-Za-z0-9_-]+\.(webp|png|jpe?g)$/
+const IMAGE_PATH_RE = /^(dishes|avatars|posters|prep|photos)\/[A-Za-z0-9_-]+\.(webp|png|jpe?g)$/
+// 存储密钥不进导出文件；恢复备份时保留当前这台机器的存储配置
+const SECRET_SETTING = 'storage.s3.secret'
 const MAX_FILE_BYTES = 8 * 1024 * 1024
 const KEEP_SNAPSHOTS = 5
 
@@ -103,6 +105,7 @@ export async function createBackup(kind: BackupKind): Promise<BackupFile> {
 
   if (kind === 'full') {
     for (const t of userTables()) tables[t] = selectAll(t)
+    if (tables.settings) tables.settings = tables.settings.filter((r) => r.key !== SECRET_SETTING)
     filePaths = await listUploads()
   } else {
     tables.dish_categories = selectAll('dish_categories')
@@ -170,6 +173,9 @@ async function restoreFull(b: BackupFile): Promise<ImportSummary> {
   const existingSet = new Set(existing)
   let rows = 0
 
+  const keepStorage = existingSet.has('settings')
+    ? (s.prepare("SELECT key, value FROM settings WHERE key LIKE 'storage.%'").all() as { key: string; value: string | null }[])
+    : []
   s.pragma('foreign_keys = OFF')
   try {
     s.transaction(() => {
@@ -187,6 +193,8 @@ async function restoreFull(b: BackupFile): Promise<ImportSummary> {
           rows++
         }
       }
+      for (const k of keepStorage)
+        s.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(k.key, k.value)
       const broken = s.pragma('foreign_key_check') as unknown[]
       if (broken.length) throw new Error('FK_CHECK_FAILED')
     })()

@@ -17,6 +17,9 @@ import { ReviewSection } from '@/components/meals/review-section'
 import { MealModeCard } from '@/components/meals/meal-mode-card'
 import { getOutingInfo, listVenueNames, fmtYuan } from '@/lib/outing'
 import { OUT_EMOJI } from '@/lib/roles'
+import { MealPhotos } from '@/components/photos/meal-photos'
+import { PhotoVote } from '@/components/photos/photo-vote'
+import { getMealPhotos, getMealCovers, MAX_PHOTOS_PER_MEAL, MAX_REVIEW_PHOTOS } from '@/lib/photos'
 
 export const dynamic = 'force-dynamic'
 
@@ -73,6 +76,17 @@ export default async function MealDetailPage({
       .filter(Boolean)
       .join(' · ') || null
   const members = listMembers().map((m) => ({ id: m.id, name: m.name, avatarPath: m.avatarPath }))
+
+  // GanCook-10k：照片（「这顿的照片」优先；一张都没有时用评价里的图代替）+ 封面投票
+  const photos = getMealPhotos(meal.id)
+  const mealOnly = photos.filter((p) => p.source === 'meal')
+  const wall = mealOnly.length > 0 ? mealOnly : photos.filter((p) => p.source === 'review')
+  const coverThumb = getMealCovers([meal.id]).get(meal.id) ?? null
+  const coverId = photos.find((p) => p.thumbPath === coverThumb)?.id ?? null
+  const photosByUser: Record<string, { id: string; path: string; thumbPath: string }[]> = {}
+  for (const p of photos)
+    if (p.source === 'review' && p.userId)
+      (photosByUser[p.userId] ??= []).push({ id: p.id, path: p.path, thumbPath: p.thumbPath })
 
   return (
     <>
@@ -226,6 +240,15 @@ export default async function MealDetailPage({
       )}
 
       {/* 大家点了什么 */}
+      <MealPhotos
+        mealId={meal.id}
+        photos={wall}
+        fromReviews={mealOnly.length === 0 && wall.length > 0}
+        remaining={MAX_PHOTOS_PER_MEAL - photos.length}
+        meId={me.id}
+        isAdmin={me.isAdmin}
+      />
+
       {!isOut && (
       <section>
         <h2 className="mb-3 text-base font-semibold text-ink">
@@ -291,8 +314,23 @@ export default async function MealDetailPage({
         </div>
       )}
 
+      {photos.length >= 2 && (
+        <PhotoVote
+          mealId={meal.id}
+          photos={photos}
+          me={{ id: me.id, name: me.name, avatarPath: me.avatarPath }}
+          coverId={coverId}
+        />
+      )}
+
       {meal.status === 'done' && (
-        <ReviewSection mealId={meal.id} reviews={reviews} meId={me.id} />
+        <ReviewSection
+          mealId={meal.id}
+          reviews={reviews}
+          meId={me.id}
+          photosByUser={photosByUser}
+          maxPhotos={MAX_REVIEW_PHOTOS}
+        />
       )}
     </>
   )

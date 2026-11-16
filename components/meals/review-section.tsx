@@ -19,6 +19,8 @@ import {
   type ScoreMode,
 } from '@/lib/scoring'
 import type { ReviewDetail } from '@/lib/meals'
+import { PhotoUploader } from '@/components/photos/photo-uploader'
+import { ReviewPhotos, type ThumbPhoto } from '@/components/photos/review-photos'
 
 /**
  * 餐后评分（GanCook-10k · P3 改造）。
@@ -30,10 +32,15 @@ export function ReviewSection({
   mealId,
   reviews,
   meId,
+  photosByUser = {},
+  maxPhotos = 6,
 }: {
   mealId: string
   reviews: ReviewDetail[]
   meId: string
+  /** GanCook-10k：评价里传的图（按用户） */
+  photosByUser?: Record<string, ThumbPhoto[]>
+  maxPhotos?: number
 }) {
   const router = useRouter()
   const t = useT()
@@ -161,6 +168,11 @@ export function ReviewSection({
           maxLength={200}
           onChange={(e) => setComment(e.target.value)}
         />
+        <div className="relative mt-3">
+          <PhotoUploader mealId={mealId} source="review" remaining={maxPhotos - (photosByUser[meId]?.length ?? 0)} compact />
+          <ReviewPhotos photos={photosByUser[meId] ?? []} canDelete />
+          <p className="mt-1.5 text-[11px] text-secondary">{t('photo.reviewHint', { n: maxPhotos })}</p>
+        </div>
         <div className="relative mt-3 flex items-center gap-3">
           <Button size="sm" loading={pending} onClick={submit}>
             {mine ? t('review.update') : t('review.submit')}
@@ -214,6 +226,7 @@ export function ReviewSection({
                   </p>
                 )}
                 {r.comment && <p className="mt-0.5 text-sm text-secondary">{r.comment}</p>}
+                <ReviewPhotos photos={photosByUser[r.userId] ?? []} />
               </div>
             </div>
           ))}

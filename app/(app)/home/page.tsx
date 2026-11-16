@@ -9,6 +9,8 @@ import { getT } from '@/lib/i18n/server'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { MealCard } from '@/components/meals/meal-card'
+import { getMealCovers } from '@/lib/photos'
+import { getOutingInfo } from '@/lib/outing'
 import { CreateMealDialog } from '@/components/meals/create-meal-dialog'
 
 export const dynamic = 'force-dynamic'
@@ -49,6 +51,8 @@ export default async function HomePage() {
   const cookNames = getCookNamesBySlot(upcomingMeals.map((m) => m.date))
   // GanCook-10k（P3）：卡片上显示全家平均分
   const scores = getMealScores(upcomingIds)
+  const covers = getMealCovers(upcomingIds)
+  const outings = getOutingInfo(upcomingMeals.filter((m) => m.kind === 'out').map((m) => m.id))
   const cookLabel = (m: (typeof upcomingMeals)[number]) =>
     cookNames.get(`${m.date}|${m.mealType}`)?.join(t('common.listSep')) ??
     (m.cookId ? members.get(m.cookId) : null)
@@ -104,6 +108,8 @@ export default async function HomePage() {
               cookName={cookLabel(m)}
               score={scores.get(m.id)?.avg ?? null}
               participants={participants.get(m.id) ?? 0}
+              cover={covers.get(m.id)}
+              outing={outings.get(m.id)}
             />
           ))}
         </div>

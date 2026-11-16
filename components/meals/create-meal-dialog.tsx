@@ -17,11 +17,12 @@ import { MEAL_TYPES, guessMealType, type MealType } from '@/lib/roles'
 
 // GanCook-10k：加餐、夜宵
 const DEFAULTS: Record<MealType, { dining: string; deadline: string }> = {
-  breakfast: { dining: '07:30', deadline: '07:00' },
-  lunch: { dining: '12:00', deadline: '10:00' },
-  dinner: { dining: '18:30', deadline: '16:00' },
-  snack: { dining: '15:30', deadline: '14:30' },
-  late: { dining: '22:00', deadline: '21:00' },
+  // 截止可晚于用餐（吃完还能补点，一般开吃时手动结束点菜）；夜宵 01:30 = 次日凌晨
+  breakfast: { dining: '07:30', deadline: '10:30' },
+  lunch: { dining: '12:00', deadline: '14:30' },
+  dinner: { dining: '18:30', deadline: '21:30' },
+  snack: { dining: '15:30', deadline: '17:30' },
+  late: { dining: '22:00', deadline: '01:30' },
 }
 
 export function CreateMealDialog({

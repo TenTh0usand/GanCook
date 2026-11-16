@@ -35,6 +35,7 @@ export async function MealCard({
   score,
   dishes,
   outing,
+  cover,
 }: {
   meal: Meal
   cookName?: string | null
@@ -46,6 +47,8 @@ export async function MealCard({
   dishes?: string[]
   /** GanCook-10k（P5）：外出信息 */
   outing?: { venueName: string | null; category: OutCategory | null; perCents: number | null } | null
+  /** GanCook-10k：封面缩略图（投票第一 / 固定随机） */
+  cover?: string | null
 }) {
   const t = await getT()
   const status = STATUS_META[meal.status]
@@ -58,11 +61,18 @@ export async function MealCard({
     >
       <div
         className={cn(
-          'flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[var(--radius-field)] text-[26px]',
+          'flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-field)] text-[26px]',
           isOut ? 'bg-[rgb(var(--mf-role-out-soft)/0.16)]' : status.tile,
         )}
       >
-        {isOut ? (outing?.category ? OUT_EMOJI[outing.category] : '🏪') : MEAL_EMOJI[meal.mealType]}
+        {cover ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={`/api/uploads/${cover}`} alt="" loading="lazy" className="h-full w-full object-cover" />
+        ) : isOut ? (
+          outing?.category ? OUT_EMOJI[outing.category] : '🏪'
+        ) : (
+          MEAL_EMOJI[meal.mealType]
+        )}
       </div>
 
       <div className="relative min-w-0 flex-1">

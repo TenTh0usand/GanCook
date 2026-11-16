@@ -19,7 +19,8 @@ export function seedDefaultSchedules(): void {
         enabled: true,
         diningTime: '12:00',
         createLeadHours: 16, // 前一天 20:00 开次日午餐
-        deadlineLeadMinutes: 120, // 10:00 截止
+        deadlineLeadMinutes: 120,
+        deadlineTime: '14:30', // 吃完还能补点，一般开吃时手动结束
         weekdays: [0, 1, 2, 3, 4, 5, 6],
       },
       {
@@ -28,7 +29,8 @@ export function seedDefaultSchedules(): void {
         enabled: true,
         diningTime: '18:30',
         createLeadHours: 10, // 当天 08:30 开
-        deadlineLeadMinutes: 150, // 16:00 截止
+        deadlineLeadMinutes: 150,
+        deadlineTime: '21:30',
         weekdays: [0, 1, 2, 3, 4, 5, 6],
       },
     ])

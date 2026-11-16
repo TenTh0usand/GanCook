@@ -17,6 +17,8 @@ import { MembersManager } from '@/components/admin/members-manager'
 import { RunSchedule } from '@/components/admin/run-schedule'
 import { UpdatePanel } from '@/components/admin/update-panel'
 import { DataTransfer } from '@/components/admin/data-transfer'
+import { StorageSettings } from '@/components/admin/storage-settings'
+import { getStorageSettings } from '@/lib/storage'
 import { APP_VERSION, REPO_URL } from '@/lib/version'
 
 export const dynamic = 'force-dynamic'
@@ -129,6 +131,12 @@ export default async function AdminPage() {
           {t('admin.members', { n: members.length })}
         </h2>
         <MembersManager members={members} meId={me.id} />
+      </section>
+
+      <section className="mb-7">
+        <h2 className="mb-1 text-base font-semibold text-ink">{t('storage.title')}</h2>
+        <p className="mb-3 text-sm text-secondary">{t('storage.desc')}</p>
+        <StorageSettings {...getStorageSettings()} />
       </section>
 
       <section className="mb-7">

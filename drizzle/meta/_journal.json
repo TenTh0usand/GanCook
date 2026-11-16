@@ -43,6 +43,13 @@
       "when": 1794638568767,
       "tag": "0005_outing",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794798259687,
+      "tag": "0006_photos",
+      "breakpoints": true
     }
   ]
 }

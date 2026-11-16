@@ -185,6 +185,8 @@ export const mealSchedules = sqliteTable('meal_schedules', {
   createLeadHours: integer('create_lead_hours').notNull().default(16),
   // 点菜截止早于用餐多少分钟
   deadlineLeadMinutes: integer('deadline_lead_minutes').notNull().default(120),
+  // GanCook-10k：点菜截止时刻 HH:MM（可晚于用餐时间；凌晨 2 点前算次日）。为空时按 deadlineLeadMinutes 计算
+  deadlineTime: text('deadline_time'),
   // 生效星期：0(周日)..6，JSON 数组
   weekdays: text('weekdays', { mode: 'json' })
     .$type<number[]>()
@@ -365,3 +367,46 @@ export const mealCompanions = sqliteTable(
 )
 
 export type Venue = typeof venues.$inferSelect
+
+// ── GanCook-10k：饭局照片 / 评价图片 / 封面投票 ──
+/** 照片（source=meal：「这顿的照片」；source=review：评价里传的图，按 user_id 对应到评价） */
+export const mealPhotos = sqliteTable(
+  'meal_photos',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    mealId: text('meal_id')
+      .notNull()
+      .references(() => meals.id, { onDelete: 'cascade' }),
+    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+    source: text('source', { enum: ['meal', 'review'] }).notNull().default('meal'),
+    // 存储路径：本机为 photos/<id>.webp，S3 / R2 为 s3/photos/<id>.webp
+    path: text('path').notNull(),
+    thumbPath: text('thumb_path').notNull(),
+    width: integer('width'),
+    height: integer('height'),
+    createdAt: integer('created_at').notNull().default(now),
+  },
+  (t) => [index('idx_meal_photos_meal').on(t.mealId)],
+)
+
+/** 「哪道菜最能代表这顿饭？」投票：每人每顿一票 */
+export const mealPhotoVotes = sqliteTable(
+  'meal_photo_votes',
+  {
+    mealId: text('meal_id')
+      .notNull()
+      .references(() => meals.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    photoId: text('photo_id')
+      .notNull()
+      .references(() => mealPhotos.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at').notNull().default(now),
+  },
+  (t) => [unique('uniq_photo_vote').on(t.mealId, t.userId), index('idx_photo_votes_photo').on(t.photoId)],
+)
+
+export type MealPhoto = typeof mealPhotos.$inferSelect

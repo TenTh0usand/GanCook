@@ -12,6 +12,7 @@ import { MealCard } from '@/components/meals/meal-card'
 import { CreateMealDialog } from '@/components/meals/create-meal-dialog'
 import { MealSearch } from '@/components/meals/meal-search'
 import { getOutingInfo } from '@/lib/outing'
+import { getMealCovers } from '@/lib/photos'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,6 +40,7 @@ export default async function MealsPage({
   // GanCook-10k（P3）：卡片上显示全家平均分
   const scores = getMealScores(mealIds)
   const dishNames = getMealDishNames(mealIds)
+  const covers = getMealCovers(mealIds)
   const outings = getOutingInfo(meals.filter((m) => m.kind === 'out').map((m) => m.id))
   const cookLabel = (m: (typeof meals)[number]) =>
     cookNames.get(`${m.date}|${m.mealType}`)?.join(t('common.listSep')) ??
@@ -110,6 +112,7 @@ export default async function MealsPage({
                   score={scores.get(m.id)?.avg ?? null}
                   participants={participants.get(m.id) ?? 0}
                   outing={outings.get(m.id)}
+                  cover={covers.get(m.id)}
                   dishes={dishNames.get(m.id)}
                 />
               ))}
@@ -125,6 +128,7 @@ export default async function MealsPage({
               score={scores.get(m.id)?.avg ?? null}
               participants={participants.get(m.id) ?? 0}
                   outing={outings.get(m.id)}
+                  cover={covers.get(m.id)}
             />
           ))}
 
@@ -142,6 +146,7 @@ export default async function MealsPage({
                   score={scores.get(m.id)?.avg ?? null}
                   participants={participants.get(m.id) ?? 0}
                   outing={outings.get(m.id)}
+                  cover={covers.get(m.id)}
                   dishes={dishNames.get(m.id)}
                 />
               ))}

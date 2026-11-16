@@ -17,6 +17,13 @@ import {
 } from '@/lib/actions/admin'
 import type { MealSchedule } from '@/lib/db/schema'
 
+/** 老规则（用餐前 N 分钟）换算成截止时刻 */
+function leadToTime(dining: string, lead: number): string {
+  const [h, m] = dining.split(':').map(Number)
+  const total = (((h * 60 + m - lead) % 1440) + 1440) % 1440
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
+
 function ScheduleRow({ s }: { s: MealSchedule }) {
   const t = useT()
   const router = useRouter()
@@ -34,9 +41,7 @@ function ScheduleRow({ s }: { s: MealSchedule }) {
   const [enabled, setEnabled] = useState(s.enabled)
   const [diningTime, setDiningTime] = useState(s.diningTime)
   const [createLead, setCreateLead] = useState(String(s.createLeadHours))
-  const [deadlineLead, setDeadlineLead] = useState(
-    String(s.deadlineLeadMinutes),
-  )
+  const [deadlineTime, setDeadlineTime] = useState(s.deadlineTime ?? leadToTime(s.diningTime, s.deadlineLeadMinutes))
   const [weekdays, setWeekdays] = useState<number[]>(s.weekdays)
   const [msg, setMsg] = useState('')
   const [isErr, setIsErr] = useState(false)
@@ -56,7 +61,7 @@ function ScheduleRow({ s }: { s: MealSchedule }) {
         enabled,
         diningTime,
         createLeadHours: Number(createLead) || 0,
-        deadlineLeadMinutes: Number(deadlineLead) || 0,
+        deadlineTime,
         weekdays,
       })
       setIsErr(!res.ok)
@@ -120,12 +125,11 @@ function ScheduleRow({ s }: { s: MealSchedule }) {
         <div className="flex items-center gap-2 text-sm">
           <span className="w-20 text-secondary">{t('schedule.deadline')}</span>
           <Input
-            type="number"
-            value={deadlineLead}
-            onChange={(e) => setDeadlineLead(e.target.value)}
-            className="h-9 w-20"
+            type="time"
+            value={deadlineTime}
+            onChange={(e) => setDeadlineTime(e.target.value)}
+            className="h-9 flex-1"
           />
-          <span className="text-secondary">{t('schedule.minutesBefore')}</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {WEEK.map((label, d) => {

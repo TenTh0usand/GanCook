@@ -38,7 +38,8 @@ export async function createMeal(input: {
   const tz = getSettings().timezone
   const diningSec = localDateTimeToSec(input.date, input.diningTime, tz)
   const rawDeadlineSec = localDateTimeToSec(input.date, input.deadline, tz)
-  const deadlineSec = Math.min(rawDeadlineSec, diningSec)
+  // GanCook-10k：截止可以晚于用餐时间（吃完还能补点）；凌晨 2 点前的时刻按次日计算
+  const deadlineSec = rawDeadlineSec
 
   const row = db.transaction(() => {
     const created = db
@@ -119,6 +120,8 @@ export async function setMealStatus(
   const meal = getMeal(id)
   if (!meal) return { ok: false, error: t('err.mealNotFound') }
   const allowed =
+    status === 'cooking' ||
+    status === 'done' ||
     me.isAdmin ||
     meal.createdBy === me.id ||
     meal.cookId === me.id ||

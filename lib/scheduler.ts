@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, eq, lte, inArray, sql } from 'drizzle-orm'
+import { and, eq, gt, lte, or, sql } from 'drizzle-orm'
 import { db } from '@/lib/db/client'
 import { meals, mealSchedules } from '@/lib/db/schema'
 import { getSettings } from '@/lib/settings'
@@ -51,7 +51,10 @@ export function tick(): TickResult {
         // 到了创建时刻、且用餐时间还没过
         if (now < createSec || now >= diningSec) continue
 
-        const deadlineSec = diningSec - s.deadlineLeadMinutes * 60
+        // 截止：优先用「截止时刻」（可晚于用餐时间，凌晨 2 点前算次日），否则按「用餐前 N 分钟」
+        const deadlineSec = s.deadlineTime
+          ? localDateTimeToSec(date, s.deadlineTime, tz)
+          : diningSec - s.deadlineLeadMinutes * 60
 
         // 幂等：同一规则同一天只建一次
         const exists = db
@@ -80,23 +83,21 @@ export function tick(): TickResult {
       }
     }
 
-    // 2) 点菜截止 → 做饭中
+    // 2) 点菜截止、还没到用餐时间 → 做饭中
     const started = db
       .update(meals)
       .set({ status: 'cooking' })
-      .where(
-        and(eq(meals.status, 'ordering'), lte(meals.orderDeadline, now)),
-      )
+      .where(and(eq(meals.status, 'ordering'), lte(meals.orderDeadline, now), gt(meals.diningTime, now)))
       .run().changes
 
-    // 3) 用餐结束 → 已完成（含错过截止仍在 ordering 的）
+    // 3) 已完成：点菜截止时已过用餐时间（截止可以晚于用餐，吃完还能补点）；做饭中的用餐 4 小时后
     const finished = db
       .update(meals)
       .set({ status: 'done' })
       .where(
-        and(
-          inArray(meals.status, ['ordering', 'cooking']),
-          lte(meals.diningTime, now - DONE_AFTER_SEC),
+        or(
+          and(eq(meals.status, 'ordering'), lte(meals.orderDeadline, now), lte(meals.diningTime, now)),
+          and(eq(meals.status, 'cooking'), lte(meals.diningTime, now - DONE_AFTER_SEC)),
         ),
       )
       .run().changes

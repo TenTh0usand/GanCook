@@ -55,7 +55,8 @@ const scheduleSchema = z.object({
   enabled: z.boolean(),
   diningTime: z.string().regex(/^\d{2}:\d{2}$/, '时间格式不对'),
   createLeadHours: z.number().int().min(0).max(72),
-  deadlineLeadMinutes: z.number().int().min(0).max(1440),
+  deadlineLeadMinutes: z.number().int().min(0).max(1440).optional(),
+  deadlineTime: z.string().regex(/^\d{2}:\d{2}$/),
   weekdays: z.array(z.number().int().min(0).max(6)),
 })
 
@@ -75,6 +76,7 @@ export async function createSchedule(): Promise<
       diningTime: '18:00',
       createLeadHours: 10,
       deadlineLeadMinutes: 120,
+      deadlineTime: '21:30',
       weekdays: [0, 1, 2, 3, 4, 5, 6],
     })
     .returning()
