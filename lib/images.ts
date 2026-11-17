@@ -60,13 +60,14 @@ export async function deleteImage(relPath: string | null | undefined) {
   await removeFile(relPath)
 }
 
-/** 校验并读取上传文件为 Buffer（限制类型与大小） */
+/** 校验并读取上传文件为 Buffer（限制类型与大小；手机浏览器有时不填 type，放行常见图片后缀给 sharp 验证） */
 export async function fileToBuffer(
   file: File,
-  maxBytes = 5 * 1024 * 1024,
+  maxBytes = 15 * 1024 * 1024,
 ): Promise<Buffer> {
   // 抛出稳定错误码，由调用方按语言翻译
-  if (!file.type.startsWith('image/')) throw new Error('IMAGE_ONLY')
+  const imgByExt = /\.(jpe?g|png|webp|gif|heic|heif|avif)$/i.test(file.name)
+  if (file.type ? !file.type.startsWith('image/') : file.name && !imgByExt) throw new Error('IMAGE_ONLY')
   if (file.size > maxBytes) throw new Error('IMAGE_TOO_LARGE')
   return Buffer.from(await file.arrayBuffer())
 }

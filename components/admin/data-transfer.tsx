@@ -1,10 +1,11 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Download, Upload, FileJson, ChefHat, Database } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { List, Row } from '@/components/ui/list'
 import { IconChip } from '@/components/ui/icon-chip'
+import { FileTrigger } from '@/components/ui/file-trigger'
 import { useT } from '@/components/i18n-provider'
 
 type Preview = {
@@ -23,7 +24,6 @@ type Summary = { kind: 'full' | 'dishes'; rows: number; files: number; added?: n
 /** 家庭管理 · 数据导入导出 */
 export function DataTransfer() {
   const t = useT()
-  const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ text: string; err?: boolean } | null>(null)
@@ -48,8 +48,6 @@ export function DataTransfer() {
       })
     } catch {
       setMsg({ text: t('data.err.BAD_FORMAT'), err: true })
-    } finally {
-      if (inputRef.current) inputRef.current.value = ''
     }
   }
 
@@ -131,17 +129,15 @@ export function DataTransfer() {
             <p className="text-[15px] font-medium text-ink">{t('data.import')}</p>
             <p className="mt-0.5 text-xs text-secondary">{t('data.importDesc')}</p>
           </div>
-          <input
-            ref={inputRef}
-            type="file"
+          <FileTrigger
             accept="application/json,.json"
-            className="hidden"
-            onChange={(e) => void pick(e.target.files?.[0])}
-          />
-          <Button variant="secondary" size="sm" onClick={() => inputRef.current?.click()} disabled={busy}>
+            disabled={busy}
+            onFiles={(fs) => void pick(fs[0])}
+            className="mf-pressable mf-btn inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] border border-[var(--mf-hairline-strong)] bg-surface px-3 text-sm text-ink"
+          >
             <FileJson className="h-4 w-4" />
             {t('data.choose')}
-          </Button>
+          </FileTrigger>
         </div>
 
         {preview && (

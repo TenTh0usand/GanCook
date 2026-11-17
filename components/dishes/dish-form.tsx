@@ -1,8 +1,8 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { ImagePlus, Trash2, Archive, ArchiveRestore, Soup } from 'lucide-react'
+import { Camera, ImagePlus, Loader2, Trash2, Archive, ArchiveRestore, Soup, X } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { Input, Textarea } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { FileTrigger } from '@/components/ui/file-trigger'
 import { useT } from '@/components/i18n-provider'
 import { compressImage } from '@/lib/client/compress-image'
 import {
@@ -50,7 +51,6 @@ export function DishForm({
 }) {
   const router = useRouter()
   const t = useT()
-  const fileRef = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(dish?.name ?? '')
   const [description, setDescription] = useState(dish?.description ?? '')
@@ -62,6 +62,7 @@ export function DishForm({
   const [preview, setPreview] = useState<string | null>(
     dish?.imagePath ? `/api/uploads/${dish.imagePath}` : null,
   )
+  const [compressing, setCompressing] = useState(false)
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
 
@@ -77,18 +78,26 @@ export function DishForm({
       setSubcategory(dish?.subcategory ?? null)
       setPinned(dish?.pinned ?? false)
       setBlob(null)
+      if (preview?.startsWith('blob:')) URL.revokeObjectURL(preview)
       setPreview(dish?.imagePath ? `/api/uploads/${dish.imagePath}` : null)
+      setCompressing(false)
       setError('')
     }
     setOpen(next)
   }
 
-  const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
+  const pickFile = async (f: File | undefined) => {
     if (!f) return
-    const compressed = await compressImage(f)
-    setBlob(compressed)
-    setPreview(URL.createObjectURL(compressed))
+    setError('')
+    setCompressing(true)
+    try {
+      const compressed = await compressImage(f)
+      if (preview?.startsWith('blob:')) URL.revokeObjectURL(preview)
+      setBlob(compressed)
+      setPreview(URL.createObjectURL(compressed))
+    } finally {
+      setCompressing(false)
+    }
   }
 
   const submit = () => {
@@ -205,33 +214,71 @@ export function DishForm({
           </div>
         ) : (
           <div className="space-y-4">
-            {/* 图片 */}
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl mf-inset"
-            >
-              {preview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={preview}
-                  alt="预览"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="flex flex-col items-center gap-1.5 text-secondary">
-                  <ImagePlus className="h-7 w-7" />
-                  <span className="text-sm">{t('dishform.photo')}</span>
-                </span>
-              )}
-            </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={pick}
-            />
+            {/* 图片：直接覆盖透明 input + 明确拍照 / 相册按钮，避免手机 Chrome 弹窗拦截 hidden input */}
+            <div>
+              <FileTrigger
+                accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                disabled={compressing}
+                ariaLabel={t('dishform.photo')}
+                onFiles={(fs) => void pickFile(fs[0])}
+                className="mf-pressable relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl mf-inset"
+              >
+                {preview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={preview}
+                    alt="预览"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="flex flex-col items-center gap-1.5 text-secondary">
+                    <ImagePlus className="h-7 w-7" />
+                    <span className="text-sm">{t('dishform.photo')}</span>
+                  </span>
+                )}
+                {compressing && (
+                  <span className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/45 text-xs font-medium text-white">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    {t('photo.compressing')}
+                  </span>
+                )}
+              </FileTrigger>
+              <div className="mt-2 flex items-center gap-2">
+                <FileTrigger
+                  accept="image/*"
+                  capture="environment"
+                  disabled={compressing}
+                  onFiles={(fs) => void pickFile(fs[0])}
+                  className="mf-pressable mf-btn inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] bg-trough px-3 text-sm text-ink"
+                >
+                  <Camera className="h-4 w-4" />
+                  {t('photo.camera')}
+                </FileTrigger>
+                <FileTrigger
+                  accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                  disabled={compressing}
+                  onFiles={(fs) => void pickFile(fs[0])}
+                  className="mf-pressable mf-btn inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] bg-trough px-3 text-sm text-ink"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  {t('photo.library')}
+                </FileTrigger>
+                {mode === 'create' && preview && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (preview.startsWith('blob:')) URL.revokeObjectURL(preview)
+                      setPreview(null)
+                      setBlob(null)
+                    }}
+                    className="ml-auto inline-flex h-9 items-center gap-1 px-2 text-xs text-secondary hover:text-ink"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    {t('common.delete')}
+                  </button>
+                )}
+              </div>
+            </div>
 
             <div>
               <Label htmlFor="dish-name">{t('dishform.name')}</Label>
@@ -288,7 +335,7 @@ export function DishForm({
 
             {error && <p className="text-sm text-danger">{error}</p>}
 
-            <Button className="w-full" size="lg" loading={pending} onClick={submit}>
+            <Button className="w-full" size="lg" loading={pending} disabled={compressing} onClick={submit}>
               {mode === 'create' ? t('common.add') : t('common.save')}
             </Button>
 

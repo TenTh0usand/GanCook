@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Camera } from 'lucide-react'
 import {
@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
+import { FileTrigger } from '@/components/ui/file-trigger'
 import { ImageCropper } from '@/components/ui/image-cropper'
 import { useT } from '@/components/i18n-provider'
 import { compressImage } from '@/lib/client/compress-image'
@@ -29,7 +30,6 @@ export function EditProfile({
 }) {
   const router = useRouter()
   const t = useT()
-  const fileRef = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(initName)
   const [blob, setBlob] = useState<Blob | null>(null)
@@ -40,11 +40,9 @@ export function EditProfile({
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
 
-  const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
+  const pickFile = (f: File | undefined) => {
     if (!f) return
     setCropSrc(URL.createObjectURL(f))
-    e.target.value = '' // 允许再次选同一文件
   }
 
   const onCropped = async (cropped: Blob) => {
@@ -88,10 +86,11 @@ export function EditProfile({
       <DialogContent title={t('profile.title')}>
         <div className="flex flex-col items-center gap-4">
           {/* 头像（点击更换） */}
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="relative h-24 w-24"
+          <FileTrigger
+            accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+            ariaLabel={t('profile.tapPhoto')}
+            onFiles={(fs) => pickFile(fs[0])}
+            className="mf-pressable relative block h-24 w-24 rounded-full"
           >
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -106,15 +105,8 @@ export function EditProfile({
             <span className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-tint bg-accent-strong text-on-accent">
               <Camera className="h-4 w-4" />
             </span>
-          </button>
+          </FileTrigger>
           <p className="text-xs text-secondary">{t('profile.tapPhoto')}</p>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={pick}
-          />
 
           <div className="w-full">
             <Label htmlFor="profile-name">{t('login.nickname')}</Label>

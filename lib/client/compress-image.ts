@@ -14,8 +14,8 @@ export async function compressImage(
   quality = 0.85,
   maxBytes = MAX_BYTES,
 ): Promise<Blob> {
-  if (!file.type.startsWith('image/')) return file
-  const bitmap = await createImageBitmap(file).catch(() => null)
+  if (file.type && !file.type.startsWith('image/')) return file
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null)
   if (!bitmap) return file
 
   const baseMax = Math.max(bitmap.width, bitmap.height)

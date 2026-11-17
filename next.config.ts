@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['better-sqlite3', 'node-cron', 'sharp'],
   experimental: {
     // 菜品/头像图片通过 Server Action 上传，放宽请求体上限
-    serverActions: { bodySizeLimit: '12mb' },
+    serverActions: { bodySizeLimit: '16mb' },
     // 数据导入（/api/admin/import）会经过 proxy，默认 10MB 会截断请求体
     proxyClientMaxBodySize: '100mb',
   },

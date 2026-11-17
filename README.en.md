@@ -6,7 +6,7 @@
 
 **A self-hosted family meal-ordering, grocery prep ledger, photo memory wall & outing tracker for your NAS.**
 
-[![Version](https://img.shields.io/badge/Version-v0.8.1-16a34a?style=flat-square)](https://github.com/TenTh0usand/GanCook/releases)
+[![Version](https://img.shields.io/badge/Version-v0.8.2-16a34a?style=flat-square)](https://github.com/TenTh0usand/GanCook/releases)
 [![Next.js](https://img.shields.io/badge/Next.js-16-111827?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-WAL%20Single%20File-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Storage](https://img.shields.io/badge/Storage-Local%20%2F%20Cloudflare%20R2-f38020?style=flat-square&logo=cloudflare&logoColor=white)](#storage--backups)

@@ -7,7 +7,7 @@
 **自部署到家庭 NAS 的点菜、备菜、相册、外出账本与厨房分工系统**  
 *让一家人每天的「今天吃啥」「谁买了菜」「谁掌了勺」「这顿值几分」「出去搓了哪顿」全部有迹可循。*
 
-[![Version](https://img.shields.io/badge/Version-v0.8.1-16a34a?style=flat-square)](https://github.com/TenTh0usand/GanCook/releases)
+[![Version](https://img.shields.io/badge/Version-v0.8.2-16a34a?style=flat-square)](https://github.com/TenTh0usand/GanCook/releases)
 [![Next.js](https://img.shields.io/badge/Next.js-16-111827?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-WAL%20单文件-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Storage](https://img.shields.io/badge/Storage-本机%20%2F%20Cloudflare%20R2-f38020?style=flat-square&logo=cloudflare&logoColor=white)](#5--云端--本机双图片存储专按-cloudflare-r2-优化)

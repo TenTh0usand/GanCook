@@ -2,12 +2,13 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ImagePlus, Plus, Trash2, X } from 'lucide-react'
+import { Camera, ImagePlus, Plus, Trash2, X } from 'lucide-react'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Input, Textarea } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Segmented } from '@/components/ui/segmented'
+import { FileTrigger } from '@/components/ui/file-trigger'
 import { useT } from '@/components/i18n-provider'
 import { compressImage } from '@/lib/client/compress-image'
 import { cn } from '@/lib/utils'
@@ -50,7 +51,6 @@ export function PrepForm({
 }) {
   const t = useT()
   const router = useRouter()
-  const fileRef = React.useRef<HTMLInputElement>(null)
   const [open, setOpen] = React.useState(false)
   const init = React.useCallback(
     () => ({
@@ -108,8 +108,7 @@ export function PrepForm({
         ? (cents / 100).toFixed(1)
         : (cents / 100).toFixed(2)
 
-  const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
+  const pickFile = async (f: File | undefined) => {
     if (!f) return
     const c = await compressImage(f)
     setBlob(c)
@@ -270,10 +269,11 @@ export function PrepForm({
 
           <div>
             <Label>{t('prep.photo')}</Label>
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="mf-inset relative flex aspect-[2.4/1] w-full items-center justify-center overflow-hidden rounded-2xl"
+            <FileTrigger
+              accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+              ariaLabel={t('prep.photo')}
+              onFiles={(fs) => void pickFile(fs[0])}
+              className="mf-inset mf-pressable relative flex aspect-[2.4/1] w-full items-center justify-center overflow-hidden rounded-2xl"
             >
               {preview ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -284,22 +284,40 @@ export function PrepForm({
                   <span className="text-xs">{t('prep.photoHint')}</span>
                 </span>
               )}
-            </button>
-            {preview && (
-              <button
-                type="button"
-                className="mt-1.5 inline-flex items-center gap-1 text-xs text-secondary"
-                onClick={() => {
-                  setPreview(null)
-                  setBlob(null)
-                  setRemoveImage(true)
-                }}
+            </FileTrigger>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <FileTrigger
+                accept="image/*"
+                capture="environment"
+                onFiles={(fs) => void pickFile(fs[0])}
+                className="mf-pressable mf-btn inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-control)] bg-trough px-3 text-xs text-ink"
               >
-                <X className="h-3.5 w-3.5" />
-                {t('prep.photoRemove')}
-              </button>
-            )}
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pick} />
+                <Camera className="h-3.5 w-3.5" />
+                {t('photo.camera')}
+              </FileTrigger>
+              <FileTrigger
+                accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                onFiles={(fs) => void pickFile(fs[0])}
+                className="mf-pressable mf-btn inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-control)] bg-trough px-3 text-xs text-ink"
+              >
+                <ImagePlus className="h-3.5 w-3.5" />
+                {t('photo.library')}
+              </FileTrigger>
+              {preview && (
+                <button
+                  type="button"
+                  className="ml-auto inline-flex h-8 items-center gap-1 px-2 text-xs text-secondary hover:text-ink"
+                  onClick={() => {
+                    setPreview(null)
+                    setBlob(null)
+                    setRemoveImage(true)
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                  {t('prep.photoRemove')}
+                </button>
+              )}
+            </div>
           </div>
 
           {error && <p className="text-sm text-danger">{error}</p>}

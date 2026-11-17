@@ -8,6 +8,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { FileTrigger } from '@/components/ui/file-trigger'
 import { useT } from '@/components/i18n-provider'
 import { compressImage } from '@/lib/client/compress-image'
 import { cn } from '@/lib/utils'
@@ -145,7 +146,6 @@ function FeatureDialog({
 }) {
   const t = useT()
   const router = useRouter()
-  const fileRef = React.useRef<HTMLInputElement>(null)
   const [dishId, setDishId] = React.useState(feature?.dishId ?? '')
   const [q, setQ] = React.useState('')
   const [title, setTitle] = React.useState(feature?.title ?? '')
@@ -163,8 +163,7 @@ function FeatureDialog({
     (d) => (!d.archived || d.id === dishId) && (!q.trim() || d.name.includes(q.trim())),
   )
 
-  const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
+  const pickFile = async (f: File | undefined) => {
     if (!f) return
     const c = await compressImage(f)
     setBlob(c)
@@ -255,10 +254,11 @@ function FeatureDialog({
           {/* 海报图（可选） */}
           <div>
             <Label>{t('feature.poster')}</Label>
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="mf-inset relative flex aspect-[2.4/1] w-full items-center justify-center overflow-hidden rounded-2xl"
+            <FileTrigger
+              accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+              ariaLabel={t('feature.poster')}
+              onFiles={(fs) => void pickFile(fs[0])}
+              className="mf-inset mf-pressable relative flex aspect-[2.4/1] w-full items-center justify-center overflow-hidden rounded-2xl"
             >
               {preview ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -269,7 +269,7 @@ function FeatureDialog({
                   <span className="text-xs">{t('feature.posterHint')}</span>
                 </span>
               )}
-            </button>
+            </FileTrigger>
             {preview && (
               <button
                 type="button"
@@ -284,7 +284,6 @@ function FeatureDialog({
                 {t('feature.posterRemove')}
               </button>
             )}
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pick} />
           </div>
 
           {error && <p className="text-sm text-danger">{error}</p>}

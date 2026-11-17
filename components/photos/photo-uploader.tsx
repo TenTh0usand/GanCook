@@ -1,10 +1,11 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Camera, ImagePlus, Loader2, RotateCw, X } from 'lucide-react'
 import { useT } from '@/components/i18n-provider'
 import { compressImage } from '@/lib/compress-image'
+import { FileTrigger } from '@/components/ui/file-trigger'
 import { cn } from '@/lib/utils'
 
 type Item = { key: string; preview: string; progress: number; status: 'compress' | 'upload' | 'error'; error?: string; file: File }
@@ -27,8 +28,6 @@ export function PhotoUploader({
 }) {
   const t = useT()
   const router = useRouter()
-  const camRef = useRef<HTMLInputElement>(null)
-  const libRef = useRef<HTMLInputElement>(null)
   const [items, setItems] = useState<Item[]>([])
   const [msg, setMsg] = useState('')
 
@@ -64,11 +63,11 @@ export function PhotoUploader({
     }
   }
 
-  const pick = (files: FileList | null) => {
+  const pick = (files: File[]) => {
     setMsg('')
-    if (!files?.length) return
+    if (!files.length) return
     const room = Math.max(0, remaining - items.length)
-    const list = [...files].filter((f) => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name))
+    const list = files.filter((f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|heic|heif|avif)$/i.test(f.name))
     if (list.length > room) setMsg(t('photo.tooMany', { n: room }))
     const next = list.slice(0, room).map((file) => ({
       // crypto.randomUUID 只在 HTTPS 下可用（家里是 http 访问），这里用简单的随机 ID
@@ -90,47 +89,27 @@ export function PhotoUploader({
   return (
     <div>
       <div className={cn('flex gap-2', compact && 'gap-1.5')}>
-        <button
-          type="button"
+        <FileTrigger
+          accept="image/*"
+          capture="environment"
           disabled={disabled}
-          onClick={() => camRef.current?.click()}
-          className="mf-pressable mf-btn flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] bg-trough px-3 text-sm text-ink disabled:opacity-40"
+          onFiles={pick}
+          className="mf-pressable mf-btn flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] bg-trough px-3 text-sm text-ink"
         >
           <Camera className="h-4 w-4" />
           {t('photo.camera')}
-        </button>
-        <button
-          type="button"
+        </FileTrigger>
+        <FileTrigger
+          accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+          multiple
           disabled={disabled}
-          onClick={() => libRef.current?.click()}
-          className="mf-pressable mf-btn flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] bg-trough px-3 text-sm text-ink disabled:opacity-40"
+          onFiles={pick}
+          className="mf-pressable mf-btn flex h-9 items-center gap-1.5 rounded-[var(--radius-control)] bg-trough px-3 text-sm text-ink"
         >
           <ImagePlus className="h-4 w-4" />
           {t('photo.library')}
-        </button>
+        </FileTrigger>
       </div>
-      <input
-        ref={camRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => {
-          pick(e.target.files)
-          e.target.value = ''
-        }}
-      />
-      <input
-        ref={libRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          pick(e.target.files)
-          e.target.value = ''
-        }}
-      />
       {msg && <p className="mt-2 text-xs text-secondary">{msg}</p>}
       {items.length > 0 && (
         <div className="mt-3 grid grid-cols-4 gap-2">
